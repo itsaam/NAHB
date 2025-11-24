@@ -1,0 +1,114 @@
+erDiagram
+    users ||--o{ stories : "authorId"
+    users ||--o{ gameSessions : "userId"
+    users ||--o{ reviews : "userId"
+    users ||--o{ reports : "userId"
+    users ||--o{ unlockedEndings : "userId"
+    
+    stories ||--o{ pages : "storyId"
+    stories ||--o{ gameSessions : "storyId"
+    stories ||--o{ reviews : "storyId"
+    stories ||--o{ reports : "storyId"
+    stories ||--o{ unlockedEndings : "storyId"
+    stories ||--o| pages : "startPageId"
+    
+    pages ||--o{ gameSessions : "currentPageId"
+    pages ||--o{ gameSessions : "endPageId"
+    pages ||--o{ unlockedEndings : "pageId"
+    
+    users {
+        ObjectId _id PK
+        String pseudo "Unique"
+        String email "Unique"
+        String password "Hashed bcrypt"
+        String role "lecteur|auteur|admin"
+        Boolean isBanned "Admin ban auteur"
+        Date createdAt
+        Date updatedAt
+    }
+    
+    stories {
+        ObjectId _id PK
+        ObjectId authorId FK
+        String title
+        String description
+        Array tags "10-20 Tags libres"
+        String theme "13-20 Filtres theme"
+        String status "brouillon|publie"
+        ObjectId startPageId FK
+        String coverImage "Optional URL"
+        Object rating
+        Number rating-average "13-20 Moyenne"
+        Number rating-count "13-20 Nb votes"
+        Object stats
+        Number stats-totalPlays "Global"
+        Number stats-totalCompletions "Fins"
+        Number stats-totalAbandonments "16-20"
+        Boolean isSuspended "Admin suspend"
+        Date createdAt
+        Date updatedAt
+    }
+    
+    pages {
+        ObjectId _id PK
+        ObjectId storyId FK
+        String content "Texte scene"
+        String illustration "16-20 URL"
+        Boolean isEnd "Page finale"
+        String endLabel "13-20 Label fin"
+        Array choices "Imbriques"
+        ObjectId choices-id
+        String choices-text
+        ObjectId choices-targetPageId
+        Number choices-order
+        Number choices-diceRequirement "18-20"
+        Object stats
+        Number stats-timesReached
+        Number stats-timesCompleted
+        Date createdAt
+        Date updatedAt
+    }
+    
+    gameSessions {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId storyId FK
+        ObjectId currentPageId FK "13-20 Sauvegarde"
+        Array path "Chemin complet"
+        ObjectId path-pageId
+        ObjectId path-choiceId
+        Date path-timestamp
+        ObjectId endPageId FK
+        Boolean isCompleted
+        Boolean isPreview "16-20 Mode preview"
+        Date startedAt
+        Date completedAt
+        Date updatedAt
+    }
+    
+    reviews {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId storyId FK
+        Number rating "1-5 etoiles"
+        String comment "13-20"
+        Date createdAt
+        Date updatedAt
+    }
+    
+    reports {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId storyId FK
+        String reason "Motif"
+        String status "pending|resolved|rejected"
+        Date createdAt
+    }
+    
+    unlockedEndings {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId storyId FK
+        ObjectId pageId FK "13-20 Fin debloquee"
+        Date unlockedAt
+    }

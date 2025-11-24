@@ -1,0 +1,133 @@
+erDiagram
+    USERS ||--o{ STORIES : "author_id"
+    USERS ||--o{ GAME_SESSIONS : "user_id"
+    USERS ||--o{ REVIEWS : "user_id"
+    USERS ||--o{ REPORTS : "user_id"
+    USERS ||--o{ UNLOCKED_ENDINGS : "user_id"
+    
+    STORIES ||--o{ STORY_TAGS : "story_id"
+    STORIES ||--o{ PAGES : "story_id"
+    STORIES ||--o{ GAME_SESSIONS : "story_id"
+    STORIES ||--o{ REVIEWS : "story_id"
+    STORIES ||--o{ REPORTS : "story_id"
+    STORIES ||--o{ UNLOCKED_ENDINGS : "story_id"
+    STORIES ||--o| PAGES : "start_page_id"
+    
+    PAGES ||--o{ CHOICES : "page_id"
+    PAGES ||--o{ CHOICES : "target_page_id"
+    PAGES ||--o{ SESSION_PATHS : "page_id"
+    PAGES ||--o{ GAME_SESSIONS : "current_page_id"
+    PAGES ||--o{ GAME_SESSIONS : "end_page_id"
+    PAGES ||--o{ UNLOCKED_ENDINGS : "page_id"
+    
+    CHOICES ||--o{ SESSION_PATHS : "choice_id"
+    
+    GAME_SESSIONS ||--o{ SESSION_PATHS : "session_id"
+    
+    USERS {
+        int id PK
+        varchar pseudo UK "Unique"
+        varchar email UK "Unique"
+        varchar password "Hashed bcrypt"
+        varchar role "lecteur|auteur|admin"
+        boolean is_banned "Admin ban auteur"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    STORIES {
+        int id PK
+        int author_id FK "Ref users"
+        varchar title
+        text description
+        varchar theme "13-20 Filtres"
+        varchar status "brouillon|publie"
+        int start_page_id FK "Page debut"
+        varchar cover_image "Optional"
+        decimal rating_average "13-20 Moyenne notes"
+        int rating_count "13-20 Nb votes"
+        int total_plays "Stats globales"
+        int total_completions "Stats fins"
+        int total_abandonments "16-20 Abandons"
+        boolean is_suspended "Admin suspend histoire"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    STORY_TAGS {
+        int id PK
+        int story_id FK
+        varchar tag "10-20 Tags libres"
+    }
+    
+    PAGES {
+        int id PK
+        int story_id FK
+        text content "Contenu scene"
+        varchar illustration "16-20 URL image"
+        boolean is_end "Page finale"
+        varchar end_label "13-20 Fin heroique tragique etc"
+        int times_reached "Stats nb passages"
+        int times_completed "Stats si fin"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    CHOICES {
+        int id PK
+        int page_id FK "Page source"
+        varchar text "Ouvrir la porte"
+        int target_page_id FK "Page cible"
+        int order_index "Ordre affichage"
+        int dice_requirement "18-20 Jet de des"
+        timestamp created_at
+    }
+    
+    GAME_SESSIONS {
+        int id PK
+        int user_id FK
+        int story_id FK
+        int current_page_id FK "13-20 Sauvegarde auto"
+        int end_page_id FK "Si termine"
+        boolean is_completed "Partie finie"
+        boolean is_preview "16-20 Mode preview auteur"
+        timestamp started_at
+        timestamp completed_at
+        timestamp updated_at "Derniere sauvegarde"
+    }
+    
+    SESSION_PATHS {
+        int id PK
+        int session_id FK
+        int page_id FK "Page visitee"
+        int choice_id FK "Choix fait"
+        int step_order "Ordre chronologique"
+        timestamp created_at
+    }
+    
+    REVIEWS {
+        int id PK
+        int user_id FK
+        int story_id FK
+        int rating "1 a 5 etoiles"
+        text comment "13-20 Commentaire"
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    REPORTS {
+        int id PK
+        int user_id FK "Qui signale"
+        int story_id FK "Histoire signalee"
+        text reason "Motif signalement"
+        varchar status "pending|resolved|rejected"
+        timestamp created_at
+    }
+    
+    UNLOCKED_ENDINGS {
+        int id PK
+        int user_id FK
+        int story_id FK
+        int page_id FK "13-20 Fin debloquee"
+        timestamp unlocked_at
+    }
