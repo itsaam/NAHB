@@ -1,35 +1,81 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './utils/ProtectedRoute';
+import Navbar from './components/Navbar';
+
+// Pages
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import StoriesPage from './pages/StoriesPage';
+import StoryDetailPage from './pages/StoryDetailPage';
+import ReadStoryPage from './pages/ReadStoryPage';
+import MyStoriesPage from './pages/MyStoriesPage';
+import AdminDashboard from './pages/AdminDashboard';
+import StoryEditorPage from "./pages/StoryEditorPage.jsx";
+
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <AuthProvider>
+        <div className="min-h-screen bg-gray-50">
+          <Navbar />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/stories" element={<StoriesPage />} />
+
+            {/* Story Detail - Public */}
+            <Route path="/story/:id" element={<StoryDetailPage />} />
+
+            {/* Protected Routes */}
+            <Route
+              path="/read/:sessionId"
+              element={
+                <ProtectedRoute>
+                  <ReadStoryPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/my-stories"
+              element={
+                <ProtectedRoute requireAuthor>
+                  <MyStoriesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/story/:storyId/edit"
+              element={
+                <ProtectedRoute requireAuthor>
+                  <StoryEditorPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
