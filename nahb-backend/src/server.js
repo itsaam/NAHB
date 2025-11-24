@@ -11,6 +11,7 @@ const storyRoutes = require("./routes/storyRoutes");
 const pageRoutes = require("./routes/pageRoutes");
 const gameRoutes = require("./routes/gameRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 // Créer l'application Express
 const app = express();
@@ -21,7 +22,7 @@ const PORT = process.env.PORT || 5000;
 // CORS
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: [process.env.CORS_ORIGIN || "http://localhost:3000", "null"],
     credentials: true,
   })
 );
@@ -56,6 +57,7 @@ app.use("/api/stories", storyRoutes);
 app.use("/api/pages", pageRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 
 // Route 404
 app.use((req, res) => {

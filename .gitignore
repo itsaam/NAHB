@@ -110,3 +110,9 @@ coverage/
 .env.production.local
 .DS_Store
 Thumbs.db
+
+# Test UI
+test-ui.html
+nahb-backend/scripts/createSampleGame.js
+nahb-backend/scripts/archonte-story.json
+nahb-backend/scripts/importStory.js
