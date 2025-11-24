@@ -13,20 +13,81 @@ const {
 } = require("../middlewares/validateMiddleware");
 
 /**
- * @route   POST /api/auth/register
- * @desc    Inscription d'un nouvel utilisateur
- * @access  Public
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Inscription d'un nouvel utilisateur
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pseudo
+ *               - email
+ *               - password
+ *             properties:
+ *               pseudo:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [lecteur, auteur]
+ *                 default: lecteur
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé avec succès
+ *       400:
+ *         description: Erreur de validation
  */
 router.post("/register", validate(registerSchema), register);
 
 /**
- * @route   POST /api/auth/login
- * @desc    Connexion d'un utilisateur
- * @access  Public
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Connexion d'un utilisateur
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Connexion réussie, retourne le token JWT
+ *       401:
+ *         description: Identifiants incorrects
  */
 router.post("/login", validate(loginSchema), login);
 
 /**
+ * @swagger
+ * /auth/profile:
+ *   get:
+ *     summary: Récupérer le profil de l'utilisateur connecté
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profil utilisateur
+ *       401:
+ *         description: Non authentifié
  * @route   GET /api/auth/profile
  * @desc    Récupérer le profil de l'utilisateur connecté
  * @access  Privé
