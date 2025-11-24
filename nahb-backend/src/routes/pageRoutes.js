@@ -21,9 +21,36 @@ const {
 } = require("../middlewares/validateMiddleware");
 
 /**
- * @route   POST /api/pages
- * @desc    Créer une nouvelle page
- * @access  Privé (auteur)
+ * @swagger
+ * /pages:
+ *   post:
+ *     summary: Créer une nouvelle page
+ *     tags: [Pages]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - storyId
+ *               - content
+ *             properties:
+ *               storyId:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               isEnd:
+ *                 type: boolean
+ *               endLabel:
+ *                 type: string
+ *               choices:
+ *                 type: array
+ *     responses:
+ *       201:
+ *         description: Page créée
  */
 router.post(
   "/",
@@ -34,16 +61,38 @@ router.post(
 );
 
 /**
- * @route   GET /api/pages/story/:storyId
- * @desc    Récupérer toutes les pages d'une histoire
- * @access  Public
+ * @swagger
+ * /pages/story/{storyId}:
+ *   get:
+ *     summary: Récupérer toutes les pages d'une histoire
+ *     tags: [Pages]
+ *     parameters:
+ *       - in: path
+ *         name: storyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Liste des pages
  */
 router.get("/story/:storyId", getStoryPages);
 
 /**
- * @route   GET /api/pages/:id
- * @desc    Récupérer une page par son ID
- * @access  Public
+ * @swagger
+ * /pages/{id}:
+ *   get:
+ *     summary: Récupérer une page par son ID
+ *     tags: [Pages]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Détails de la page
  */
 router.get("/:id", getPageById);
 

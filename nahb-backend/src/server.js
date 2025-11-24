@@ -4,6 +4,7 @@ const cors = require("cors");
 const { pool, initTables } = require("./config/postgresql");
 const connectMongoDB = require("./config/mongodb");
 const logger = require("./utils/logger");
+const { swaggerUi, specs } = require("./config/swagger");
 
 // Import des routes
 const authRoutes = require("./routes/authRoutes");
@@ -40,6 +41,9 @@ app.use((req, res, next) => {
 });
 
 // ==================== ROUTES ====================
+
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Health check
 app.get("/api/health", (req, res) => {

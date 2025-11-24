@@ -19,9 +19,54 @@ const {
 } = require("../middlewares/validateMiddleware");
 
 /**
- * @route   POST /api/stories
- * @desc    Créer une nouvelle histoire
- * @access  Privé (auteur)
+ * @swagger
+ * /stories:
+ *   post:
+ *     summary: Créer une nouvelle histoire
+ *     tags: [Stories]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - description
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               coverImage:
+ *                 type: string
+ *               genre:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [brouillon, publié]
+ *     responses:
+ *       201:
+ *         description: Histoire créée
+ *       401:
+ *         description: Non authentifié
+ *   get:
+ *     summary: Lister les histoires publiées
+ *     tags: [Stories]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: genre
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Liste des histoires
  */
 router.post(
   "/",
@@ -30,18 +75,21 @@ router.post(
   validate(createStorySchema),
   createStory
 );
-
-/**
- * @route   GET /api/stories
- * @desc    Lister les histoires publiées (avec filtres/recherche)
- * @access  Public
- */
 router.get("/", getPublishedStories);
 
 /**
- * @route   GET /api/stories/my
- * @desc    Récupérer les histoires de l'auteur connecté
- * @access  Privé (auteur)
+ * @swagger
+ * /stories/my:
+ *   get:
+ *     summary: Récupérer mes histoires
+ *     tags: [Stories]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Mes histoires
+ *       401:
+ *         description: Non authentifié
  */
 router.get("/my", authenticate, requireAuthor, getMyStories);
 
