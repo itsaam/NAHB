@@ -8,6 +8,10 @@ const logger = require("../utils/logger");
  */
 const register = async (req, res) => {
   try {
+    /*console.log("=== DEBUG REGISTER ===");
+    console.log("Body:", req.body);
+    console.log("Headers:", req.headers);
+    console.log("====================="); */
     const { pseudo, email, password, role } = req.body;
 
     logger.info(`Tentative d'inscription : ${email}`);
