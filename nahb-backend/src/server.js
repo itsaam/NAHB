@@ -11,6 +11,8 @@ const storyRoutes = require("./routes/storyRoutes");
 const pageRoutes = require("./routes/pageRoutes");
 const gameRoutes = require("./routes/gameRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 const userRoutes = require("./routes/userRoutes");
 
 // Créer l'application Express
@@ -57,6 +59,8 @@ app.use("/api/stories", storyRoutes);
 app.use("/api/pages", pageRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/reports", reportRoutes);
 app.use("/api/users", userRoutes);
 
 // Route 404
@@ -70,12 +74,10 @@ app.use((req, res) => {
 
 // ==================== GESTION DES ERREURS ====================
 
-// Middleware de gestion des erreurs globales
 app.use((err, req, res, next) => {
   logger.error(`Erreur serveur : ${err.message}`);
   logger.error(err.stack);
 
-  // Erreur Mongoose (MongoDB)
   if (err.name === "ValidationError") {
     return res.status(400).json({
       success: false,
@@ -91,9 +93,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Erreur PostgreSQL
   if (err.code === "23505") {
-    // Violation de contrainte unique
     return res.status(409).json({
       success: false,
       error: "Une entrée avec ces données existe déjà.",
@@ -101,14 +101,12 @@ app.use((err, req, res, next) => {
   }
 
   if (err.code === "23503") {
-    // Violation de contrainte de clé étrangère
     return res.status(400).json({
       success: false,
       error: "Référence invalide à une ressource.",
     });
   }
 
-  // Erreur générique
   return res.status(500).json({
     success: false,
     error: "Erreur serveur interne.",
@@ -121,20 +119,16 @@ const startServer = async () => {
   try {
     logger.info("=== Démarrage du serveur NAHB ===");
 
-    // 1. Connexion PostgreSQL
     logger.info("Connexion à PostgreSQL...");
     const pgClient = await pool.connect();
     pgClient.release();
     logger.info("✅ PostgreSQL connecté");
 
-    // 2. Initialisation des tables PostgreSQL
     await initTables();
 
-    // 3. Connexion MongoDB
     logger.info("Connexion à MongoDB...");
     await connectMongoDB();
 
-    // 4. Démarrage du serveur Express
     app.listen(PORT, () => {
       logger.info(`✅ Serveur démarré sur le port ${PORT}`);
       logger.info(
@@ -153,7 +147,6 @@ const startServer = async () => {
   }
 };
 
-// Gestion de l'arrêt propre du serveur
 process.on("SIGINT", async () => {
   logger.info("Arrêt du serveur en cours...");
 
@@ -180,7 +173,6 @@ process.on("SIGTERM", async () => {
   }
 });
 
-// Gestion des erreurs non capturées
 process.on("unhandledRejection", (reason, promise) => {
   logger.error("Promesse rejetée non gérée :");
   logger.error(reason);
@@ -192,5 +184,4 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-// Démarrer le serveur
 startServer();

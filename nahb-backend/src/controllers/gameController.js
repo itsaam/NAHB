@@ -17,7 +17,6 @@ const startGame = async (req, res) => {
       }`
     );
 
-    // Vérifier que l'histoire existe
     const story = await Story.findById(storyMongoId);
 
     if (!story) {
@@ -28,7 +27,6 @@ const startGame = async (req, res) => {
       });
     }
 
-    // Vérifier que l'histoire est publiée et non suspendue
     if (story.status !== "publié" || story.isSuspended) {
       logger.warn(
         `Tentative de jouer à une histoire non disponible : ${storyMongoId}`
@@ -39,7 +37,6 @@ const startGame = async (req, res) => {
       });
     }
 
-    // Vérifier que l'histoire a une page de départ
     if (!story.startPageId) {
       logger.warn(`Histoire ${storyMongoId} sans page de départ`);
       return res.status(400).json({
@@ -57,7 +54,48 @@ const startGame = async (req, res) => {
       });
     }
 
-    // Créer une session de jeu dans PostgreSQL
+    let session;
+    if (userId) {
+        console.log(`🔍 Recherche d'une session existante pour user ${userId} et story ${storyMongoId}`);
+
+      const existingSession = await pool.query(
+        `SELECT * FROM game_sessions 
+         WHERE user_id = $1 AND story_mongo_id = $2 AND is_completed = false 
+         ORDER BY updated_at DESC LIMIT 1`,
+        [userId, storyMongoId]
+      );
+
+        console.log(`📊 Sessions trouvées: ${existingSession.rows.length}`);
+
+      if (existingSession.rows.length > 0) {
+        session = existingSession.rows[0];
+        console.log(`✅ REPRISE DE LA SESSION ${session.id} pour l'utilisateur ${userId}`);
+          console.log(`📄 Page actuelle: ${session.current_page_mongo_id}`);
+
+        const currentPage = await Page.findById(session.current_page_mongo_id);
+
+        if (!currentPage) {
+            console.log(`❌ Page actuelle introuvable: ${session.current_page_mongo_id}`);
+        } else {
+            console.log(`✅ Page chargée: ${currentPage.content.substring(0, 50)}...`);
+        }
+
+        return res.status(200).json({
+          success: true,
+          data: {
+            sessionId: session.id,
+            storyId: storyMongoId,
+            currentPage: currentPage,
+            resumed: true,
+          },
+        });
+      } else {
+        logger.info(`🆕 Aucune session en cours trouvée, création d'une nouvelle session`);
+      }
+    } else {
+      logger.warn(`⚠️ Pas d'utilisateur connecté (userId: ${userId}), création d'une nouvelle session`);
+    }
+
     const result = await pool.query(
       `INSERT INTO game_sessions (user_id, story_mongo_id, current_page_mongo_id, is_preview) 
        VALUES ($1, $2, $3, $4) 
@@ -65,13 +103,11 @@ const startGame = async (req, res) => {
       [userId, storyMongoId, story.startPageId.toString(), false]
     );
 
-    const session = result.rows[0];
+    session = result.rows[0];
 
-    // Incrémenter le compteur de parties de l'histoire
     story.stats.totalPlays += 1;
     await story.save();
 
-    // Incrémenter le compteur de visites de la page
     startPage.stats.timesReached += 1;
     await startPage.save();
 
@@ -104,7 +140,6 @@ const makeChoice = async (req, res) => {
 
     logger.info(`Choix ${choiceId} fait dans la session ${sessionId}`);
 
-    // Récupérer la session
     const sessionResult = await pool.query(
       "SELECT * FROM game_sessions WHERE id = $1",
       [sessionId]
@@ -142,7 +177,6 @@ const makeChoice = async (req, res) => {
       });
     }
 
-    // Trouver le choix sélectionné
     const choice = currentPage.choices.find(
       (c) => c._id.toString() === choiceId
     );
@@ -155,7 +189,6 @@ const makeChoice = async (req, res) => {
       });
     }
 
-    // Récupérer la page cible
     const targetPage = await Page.findById(choice.targetPageId);
 
     if (!targetPage) {
@@ -166,16 +199,18 @@ const makeChoice = async (req, res) => {
       });
     }
 
-    // Enregistrer le chemin parcouru
     await pool.query(
       `INSERT INTO session_paths (session_id, page_mongo_id, choice_mongo_id, step_order)
        VALUES ($1, $2, $3, (SELECT COALESCE(MAX(step_order), 0) + 1 FROM session_paths WHERE session_id = $1))`,
       [sessionId, currentPage._id.toString(), choiceId]
     );
 
-    // Mettre à jour la session
     let isCompleted = targetPage.isEnd;
     let endPageMongoId = isCompleted ? targetPage._id.toString() : null;
+
+    logger.info(`💾 Mise à jour de la session ${sessionId}`);
+    logger.info(`📄 Nouvelle page: ${targetPage._id.toString()}`);
+    logger.info(`✅ Terminée: ${isCompleted}`);
 
     await pool.query(
       `UPDATE game_sessions 
@@ -194,17 +229,16 @@ const makeChoice = async (req, res) => {
       ]
     );
 
-    // Incrémenter les stats de la page cible
+    logger.info(`✅ Session ${sessionId} mise à jour avec succès`);
+
     targetPage.stats.timesReached += 1;
     if (targetPage.isEnd) {
       targetPage.stats.timesCompleted += 1;
 
-      // Incrémenter le compteur de complétions de l'histoire
       await Story.findByIdAndUpdate(targetPage.storyId, {
         $inc: { "stats.totalCompletions": 1 },
       });
 
-      // Enregistrer la fin débloquée
       if (req.user) {
         await pool.query(
           `INSERT INTO unlocked_endings (user_id, story_mongo_id, page_mongo_id)
@@ -247,8 +281,7 @@ const getSessionHistory = async (req, res) => {
 
     logger.info(`Récupération de l'historique de la session ${sessionId}`);
 
-    // Récupérer la session
-    const sessionResult = await pool.query(
+      const sessionResult = await pool.query(
       "SELECT * FROM game_sessions WHERE id = $1",
       [sessionId]
     );
@@ -263,7 +296,6 @@ const getSessionHistory = async (req, res) => {
 
     const session = sessionResult.rows[0];
 
-    // Récupérer le chemin parcouru
     const pathResult = await pool.query(
       `SELECT page_mongo_id, choice_mongo_id, step_order, created_at 
        FROM session_paths 
@@ -332,9 +364,185 @@ const getMySessions = async (req, res) => {
   }
 };
 
+/**
+ * Obtenir les statistiques de parcours pour une session
+ */
+const getPathStats = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    logger.info(`Récupération des stats de parcours pour session ${sessionId}`);
+
+    const sessionResult = await pool.query(
+      "SELECT * FROM game_sessions WHERE id = $1",
+      [sessionId]
+    );
+
+    if (sessionResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Session introuvable.",
+      });
+    }
+
+    const session = sessionResult.rows[0];
+
+    const pathResult = await pool.query(
+      `SELECT page_mongo_id FROM session_paths 
+       WHERE session_id = $1 
+       ORDER BY step_order ASC`,
+      [sessionId]
+    );
+
+    const currentPath = pathResult.rows.map(r => r.page_mongo_id);
+
+    const allPathsResult = await pool.query(
+      `SELECT sp.session_id, sp.page_mongo_id, sp.step_order
+       FROM session_paths sp
+       JOIN game_sessions gs ON sp.session_id = gs.id
+       WHERE gs.story_mongo_id = $1
+       ORDER BY sp.session_id, sp.step_order`,
+      [session.story_mongo_id]
+    );
+
+    const sessionPaths = {};
+    allPathsResult.rows.forEach(row => {
+      if (!sessionPaths[row.session_id]) {
+        sessionPaths[row.session_id] = [];
+      }
+      sessionPaths[row.session_id].push(row.page_mongo_id);
+    });
+
+    let totalSessions = Object.keys(sessionPaths).length;
+    let similarSessions = 0;
+
+    Object.values(sessionPaths).forEach(path => {
+      const minLength = Math.min(currentPath.length, path.length);
+      let matches = 0;
+
+      for (let i = 0; i < minLength; i++) {
+        if (currentPath[i] === path[i]) {
+          matches++;
+        }
+      }
+
+      if (minLength > 0 && matches / minLength >= 0.7) {
+        similarSessions++;
+      }
+    });
+
+    const similarityPercentage = totalSessions > 0
+      ? Math.round((similarSessions / totalSessions) * 100)
+      : 0;
+
+    let endStats = null;
+    if (session.is_completed && session.end_page_mongo_id) {
+      const endStatsResult = await pool.query(
+        `SELECT COUNT(*) as count
+         FROM game_sessions
+         WHERE story_mongo_id = $1 AND end_page_mongo_id = $2 AND is_completed = true`,
+        [session.story_mongo_id, session.end_page_mongo_id]
+      );
+
+      const totalCompleted = await pool.query(
+        `SELECT COUNT(*) as count
+         FROM game_sessions
+         WHERE story_mongo_id = $1 AND is_completed = true`,
+        [session.story_mongo_id]
+      );
+
+      const endCount = parseInt(endStatsResult.rows[0].count);
+      const totalCount = parseInt(totalCompleted.rows[0].count);
+
+      endStats = {
+        endPageId: session.end_page_mongo_id,
+        timesReached: endCount,
+        percentage: totalCount > 0 ? Math.round((endCount / totalCount) * 100) : 0,
+      };
+    }
+
+    logger.info(`Stats calculées: ${similarityPercentage}% similarité`);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        pathSimilarity: similarityPercentage,
+        totalSessions: totalSessions,
+        endStats: endStats,
+      },
+    });
+  } catch (err) {
+    logger.error(`Erreur stats parcours: ${err.message}`);
+    return res.status(500).json({
+      success: false,
+      error: "Erreur lors du calcul des statistiques.",
+    });
+  }
+};
+
+const getUnlockedEndings = async (req, res) => {
+  try {
+    const { storyId } = req.params;
+    const userId = req.user.id;
+
+    logger.info(
+      `Récupération des fins débloquées pour l'histoire ${storyId} par ${userId}`
+    );
+
+    const result = await pool.query(
+      `SELECT page_mongo_id, unlocked_at 
+       FROM unlocked_endings 
+       WHERE user_id = $1 AND story_mongo_id = $2
+       ORDER BY unlocked_at DESC`,
+      [userId, storyId]
+    );
+
+    const unlockedEndings = result.rows;
+
+    const pageIds = unlockedEndings.map((e) => e.page_mongo_id);
+    const pages = await Page.find({
+      _id: { $in: pageIds },
+      isEnd: true,
+    }).select("_id endLabel illustration stats");
+
+    const endingsWithDetails = unlockedEndings.map((ending) => {
+      const page = pages.find(
+        (p) => p._id.toString() === ending.page_mongo_id
+      );
+      return {
+        pageId: ending.page_mongo_id,
+        endLabel: page?.endLabel || "Fin sans titre",
+        illustration: page?.illustration || "",
+        timesCompleted: page?.stats.timesCompleted || 0,
+        unlockedAt: ending.unlocked_at,
+      };
+    });
+
+    logger.info(
+      `${endingsWithDetails.length} fins débloquées trouvées pour ${userId}`
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: endingsWithDetails,
+    });
+  } catch (err) {
+    logger.error(
+      `Erreur lors de la récupération des fins débloquées : ${err.message}`
+    );
+    return res.status(500).json({
+      success: false,
+      error: "Erreur serveur lors de la récupération des fins débloquées.",
+    });
+  }
+};
+
 module.exports = {
   startGame,
   makeChoice,
   getSessionHistory,
   getMySessions,
+  getUnlockedEndings,
+  getPathStats,
 };
+
