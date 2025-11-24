@@ -147,7 +147,149 @@ const getAllStoryEndings = async (req, res) => {
   }
 };
 
+/**
+ * Créer ou mettre à jour une review
+ */
+const createOrUpdateReview = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { storyMongoId, rating, comment } = req.body;
+
+    // Vérifier que l'histoire existe
+    const story = await Story.findById(storyMongoId);
+    if (!story) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Histoire introuvable" });
+    }
+
+    // Vérifier si une review existe déjà
+    const existing = await pool.query(
+      "SELECT id FROM reviews WHERE user_id = $1 AND story_mongo_id = $2",
+      [userId, storyMongoId]
+    );
+
+    if (existing.rows.length > 0) {
+      // Mettre à jour
+      await pool.query(
+        "UPDATE reviews SET rating = $1, comment = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
+        [rating, comment || null, existing.rows[0].id]
+      );
+      logger.info(
+        `Review mise à jour - User: ${userId}, Story: ${storyMongoId}`
+      );
+    } else {
+      // Créer
+      await pool.query(
+        "INSERT INTO reviews (user_id, story_mongo_id, rating, comment) VALUES ($1, $2, $3, $4)",
+        [userId, storyMongoId, rating, comment || null]
+      );
+      logger.info(`Review créée - User: ${userId}, Story: ${storyMongoId}`);
+    }
+
+    // Recalculer la moyenne des notes
+    const stats = await pool.query(
+      "SELECT AVG(rating) as avg, COUNT(*) as count FROM reviews WHERE story_mongo_id = $1",
+      [storyMongoId]
+    );
+
+    await Story.findByIdAndUpdate(storyMongoId, {
+      "rating.average": parseFloat(stats.rows[0].avg),
+      "rating.count": parseInt(stats.rows[0].count),
+    });
+
+    res.status(200).json({ success: true, message: "Review enregistrée" });
+  } catch (error) {
+    logger.error(`Erreur createOrUpdateReview : ${error.message}`);
+    res.status(500).json({ success: false, error: "Erreur serveur" });
+  }
+};
+
+/**
+ * Récupérer les reviews d'une histoire
+ */
+const getStoryReviews = async (req, res) => {
+  try {
+    const { storyId } = req.params;
+
+    const result = await pool.query(
+      `SELECT r.id, r.rating, r.comment, r.created_at, u.pseudo 
+       FROM reviews r 
+       JOIN users u ON r.user_id = u.id 
+       WHERE r.story_mongo_id = $1 
+       ORDER BY r.created_at DESC`,
+      [storyId]
+    );
+
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    logger.error(`Erreur getStoryReviews : ${error.message}`);
+    res.status(500).json({ success: false, error: "Erreur serveur" });
+  }
+};
+
+/**
+ * Supprimer sa propre review
+ */
+const deleteReview = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { storyId } = req.params;
+
+    const result = await pool.query(
+      "DELETE FROM reviews WHERE user_id = $1 AND story_mongo_id = $2 RETURNING *",
+      [userId, storyId]
+    );
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Review introuvable" });
+    }
+
+    logger.info(`Review supprimée - User: ${userId}, Story: ${storyId}`);
+    res.status(200).json({ success: true, message: "Review supprimée" });
+  } catch (error) {
+    logger.error(`Erreur deleteReview : ${error.message}`);
+    res.status(500).json({ success: false, error: "Erreur serveur" });
+  }
+};
+
+/**
+ * Créer un signalement
+ */
+const createReport = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { storyMongoId, reason } = req.body;
+
+    // Vérifier que l'histoire existe
+    const story = await Story.findById(storyMongoId);
+    if (!story) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Histoire introuvable" });
+    }
+
+    // Insérer le signalement
+    await pool.query(
+      "INSERT INTO reports (user_id, story_mongo_id, reason) VALUES ($1, $2, $3)",
+      [userId, storyMongoId, reason]
+    );
+
+    logger.info(`Signalement créé - User: ${userId}, Story: ${storyMongoId}`);
+    res.status(201).json({ success: true, message: "Signalement enregistré" });
+  } catch (error) {
+    logger.error(`Erreur createReport : ${error.message}`);
+    res.status(500).json({ success: false, error: "Erreur serveur" });
+  }
+};
+
 module.exports = {
   getUnlockedEndings,
   getAllStoryEndings,
+  createOrUpdateReview,
+  getStoryReviews,
+  deleteReview,
+  createReport,
 };
