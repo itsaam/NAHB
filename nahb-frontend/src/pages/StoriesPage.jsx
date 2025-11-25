@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { storiesAPI } from '../services/api';
 
@@ -6,25 +6,60 @@ export default function StoriesPage() {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [errorDetails, setErrorDetails] = useState(null);
   const [search, setSearch] = useState('');
   const [theme, setTheme] = useState('');
+  const [lastParams, setLastParams] = useState(null);
+
+  // Debounce pour la recherche
+  const searchTimeout = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
+  }, [search]);
 
   useEffect(() => {
     loadStories();
-  }, [search, theme]);
+  }, [debouncedSearch, theme]);
 
   const loadStories = async () => {
     try {
       setLoading(true);
+      setError('');
+      setErrorDetails(null);
+
       const params = {};
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (theme) params.theme = theme;
 
+      // Garder une trace des params envoyés (debug)
+      setLastParams(params);
+      console.debug('Fetching /api/stories with params:', params);
+
       const response = await storiesAPI.getAll(params);
-      setStories(response.data.data);
+
+      // Vérifier la structure attendue
+      if (!response || !response.data || !response.data.data) {
+        throw new Error('Réponse API inattendue');
+      }
+
+      setStories(response.data.data || []);
     } catch (err) {
+      console.error('Erreur lors du chargement des histoires', err);
       setError('Erreur lors du chargement des histoires');
-      console.error(err);
+
+      // Remplir des détails utiles pour debug
+      const details = {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      };
+      setErrorDetails(details);
     } finally {
       setLoading(false);
     }
@@ -75,14 +110,23 @@ export default function StoriesPage() {
           </div>
         </div>
 
+        {/* Affichage d'erreur détaillé pour debug */}
+        {error && (
+          <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-4">
+            <div>{error}</div>
+            {errorDetails && (
+              <pre className="mt-2 text-xs text-red-700 whitespace-pre-wrap">{JSON.stringify(errorDetails, null, 2)}</pre>
+            )}
+            {lastParams && (
+              <div className="mt-2 text-xs text-gray-600">Params envoyés: {JSON.stringify(lastParams)}</div>
+            )}
+          </div>
+        )}
+
         {/* Liste des histoires */}
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-600">Chargement...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 text-red-800 p-4 rounded-lg">
-            {error}
           </div>
         ) : stories.length === 0 ? (
           <div className="text-center py-12">
@@ -130,4 +174,3 @@ export default function StoriesPage() {
     </div>
   );
 }
-
