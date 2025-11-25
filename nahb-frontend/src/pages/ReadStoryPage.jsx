@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { gameAPI, pagesAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { gameAPI, pagesAPI } from "../services/api";
 
 export default function ReadStoryPage() {
   const { sessionId } = useParams();
@@ -8,7 +8,7 @@ export default function ReadStoryPage() {
 
   const [currentPage, setCurrentPage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isCompleted, setIsCompleted] = useState(false);
   const [unlockedEndings, setUnlockedEndings] = useState([]);
   const [storyId, setStoryId] = useState(null);
@@ -30,20 +30,26 @@ export default function ReadStoryPage() {
 
       if (session.story_mongo_id) {
         try {
-          const endingsResponse = await gameAPI.getUnlockedEndings(session.story_mongo_id);
+          const endingsResponse = await gameAPI.getUnlockedEndings(
+            session.story_mongo_id
+          );
           setUnlockedEndings(endingsResponse.data.data || []);
         } catch (err) {
-          console.log('Aucune fin débloquée');
+          console.log("Aucune fin débloquée");
           setUnlockedEndings([]);
         }
       }
 
-      const pageResponse = await pagesAPI.getById(session.current_page_mongo_id);
+      const pageResponse = await pagesAPI.getById(
+        session.current_page_mongo_id
+      );
       setCurrentPage(pageResponse.data.data);
-
     } catch (err) {
-      console.error('Erreur chargement session:', err);
-      setError(err.response?.data?.error || 'Session introuvable ou erreur de chargement');
+      console.error("Erreur chargement session:", err);
+      setError(
+        err.response?.data?.error ||
+          "Session introuvable ou erreur de chargement"
+      );
     } finally {
       setLoading(false);
     }
@@ -53,7 +59,8 @@ export default function ReadStoryPage() {
     try {
       setLoading(true);
       const response = await gameAPI.makeChoice(sessionId, choiceId);
-      const { currentPage: nextPage, isCompleted: completed } = response.data.data;
+      const { currentPage: nextPage, isCompleted: completed } =
+        response.data.data;
 
       setCurrentPage(nextPage);
       setIsCompleted(completed);
@@ -66,18 +73,23 @@ export default function ReadStoryPage() {
           const statsResponse = await gameAPI.getPathStats(sessionId);
           setPathStats(statsResponse.data.data);
         } catch (err) {
-          console.log('Erreur lors du chargement des stats');
+          console.log("Erreur lors du chargement des stats");
         }
       }
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur lors du choix');
+      alert(err.response?.data?.error || "Erreur lors du choix");
     } finally {
       setLoading(false);
     }
   };
 
   const handleRestart = () => {
-    navigate('/stories');
+    navigate("/stories");
+  };
+
+  const handleSaveAndQuit = () => {
+    // La session est déjà sauvegardée automatiquement
+    navigate("/stories");
   };
 
   if (loading && !currentPage) {
@@ -94,7 +106,7 @@ export default function ReadStoryPage() {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button
-            onClick={() => navigate('/stories')}
+            onClick={() => navigate("/stories")}
             className="text-indigo-600 hover:text-indigo-800"
           >
             Retour aux histoires
@@ -158,16 +170,16 @@ export default function ReadStoryPage() {
         {isCompleted || currentPage.isEnd ? (
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-8 text-center shadow-2xl">
             <h2 className="text-3xl font-bold mb-4">
-              🎉 {currentPage.endLabel || 'Fin'}
+              🎉 {currentPage.endLabel || "Fin"}
             </h2>
-            <p className="text-lg mb-6">
-              Vous avez terminé cette histoire !
-            </p>
+            <p className="text-lg mb-6">Vous avez terminé cette histoire !</p>
 
             {/* Statistiques de parcours */}
             {pathStats && (
               <div className="bg-white bg-opacity-10 rounded-lg p-4 mb-6">
-                <p className="text-lg font-bold mb-3">📊 Statistiques de parcours</p>
+                <p className="text-lg font-bold mb-3">
+                  📊 Statistiques de parcours
+                </p>
 
                 <div className="space-y-3">
                   {/* Similarité du chemin */}
@@ -189,7 +201,8 @@ export default function ReadStoryPage() {
                         {pathStats.endStats.percentage}% des joueurs
                       </p>
                       <p className="text-xs opacity-75 mt-1">
-                        ont atteint cette fin ({pathStats.endStats.timesReached} fois)
+                        ont atteint cette fin ({pathStats.endStats.timesReached}{" "}
+                        fois)
                       </p>
                     </div>
                   )}
@@ -227,34 +240,46 @@ export default function ReadStoryPage() {
           </div>
         ) : (
           /* Choix disponibles */
-          <div className="space-y-4">
+          <div>
+            {/* Bouton Sauvegarder & Quitter */}
+            <div className="mb-6 flex justify-center">
+              <button
+                onClick={handleSaveAndQuit}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors flex items-center gap-2"
+              >
+                💾 Sauvegarder & Quitter
+              </button>
+            </div>
+
             <h3 className="text-xl font-semibold mb-4 text-center">
               Que faites-vous ?
             </h3>
-            {currentPage.choices && currentPage.choices.length > 0 ? (
-              currentPage.choices.map((choice, index) => (
-                <button
-                  key={choice._id || index}
-                  onClick={() => handleChoice(choice._id)}
-                  disabled={loading}
-                  className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-lg rounded-lg p-4 text-left transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="text-lg font-medium">
-                    {choice.order !== undefined && `${choice.order + 1}. `}
-                    {choice.text}
-                  </span>
-                  {choice.diceRequirement && (
-                    <span className="ml-2 text-sm text-yellow-300">
-                      🎲 Jet de dé requis: {choice.diceRequirement}+
+            <div className="space-y-4">
+              {currentPage.choices && currentPage.choices.length > 0 ? (
+                currentPage.choices.map((choice, index) => (
+                  <button
+                    key={choice._id || index}
+                    onClick={() => handleChoice(choice._id)}
+                    disabled={loading}
+                    className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-lg rounded-lg p-4 text-left transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="text-lg font-medium">
+                      {choice.order !== undefined && `${choice.order + 1}. `}
+                      {choice.text}
                     </span>
-                  )}
-                </button>
-              ))
-            ) : (
-              <div className="text-center text-gray-400">
-                Aucun choix disponible
-              </div>
-            )}
+                    {choice.diceRequirement && (
+                      <span className="ml-2 text-sm text-yellow-300">
+                        🎲 Jet de dé requis: {choice.diceRequirement}+
+                      </span>
+                    )}
+                  </button>
+                ))
+              ) : (
+                <div className="text-center text-gray-400">
+                  Aucun choix disponible
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -270,4 +295,3 @@ export default function ReadStoryPage() {
     </div>
   );
 }
-
