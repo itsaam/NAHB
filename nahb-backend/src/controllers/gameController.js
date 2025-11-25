@@ -56,7 +56,9 @@ const startGame = async (req, res) => {
 
     let session;
     if (userId) {
-        console.log(`🔍 Recherche d'une session existante pour user ${userId} et story ${storyMongoId}`);
+      console.log(
+        `🔍 Recherche d'une session existante pour user ${userId} et story ${storyMongoId}`
+      );
 
       const existingSession = await pool.query(
         `SELECT * FROM game_sessions 
@@ -65,19 +67,25 @@ const startGame = async (req, res) => {
         [userId, storyMongoId]
       );
 
-        console.log(`📊 Sessions trouvées: ${existingSession.rows.length}`);
+      console.log(`📊 Sessions trouvées: ${existingSession.rows.length}`);
 
       if (existingSession.rows.length > 0) {
         session = existingSession.rows[0];
-        console.log(`✅ REPRISE DE LA SESSION ${session.id} pour l'utilisateur ${userId}`);
-          console.log(`📄 Page actuelle: ${session.current_page_mongo_id}`);
+        console.log(
+          `✅ REPRISE DE LA SESSION ${session.id} pour l'utilisateur ${userId}`
+        );
+        console.log(`📄 Page actuelle: ${session.current_page_mongo_id}`);
 
         const currentPage = await Page.findById(session.current_page_mongo_id);
 
         if (!currentPage) {
-            console.log(`❌ Page actuelle introuvable: ${session.current_page_mongo_id}`);
+          console.log(
+            `❌ Page actuelle introuvable: ${session.current_page_mongo_id}`
+          );
         } else {
-            console.log(`✅ Page chargée: ${currentPage.content.substring(0, 50)}...`);
+          console.log(
+            `✅ Page chargée: ${currentPage.content.substring(0, 50)}...`
+          );
         }
 
         return res.status(200).json({
@@ -90,10 +98,14 @@ const startGame = async (req, res) => {
           },
         });
       } else {
-        logger.info(`🆕 Aucune session en cours trouvée, création d'une nouvelle session`);
+        logger.info(
+          `🆕 Aucune session en cours trouvée, création d'une nouvelle session`
+        );
       }
     } else {
-      logger.warn(`⚠️ Pas d'utilisateur connecté (userId: ${userId}), création d'une nouvelle session`);
+      logger.warn(
+        `⚠️ Pas d'utilisateur connecté (userId: ${userId}), création d'une nouvelle session`
+      );
     }
 
     const result = await pool.query(
@@ -281,7 +293,7 @@ const getSessionHistory = async (req, res) => {
 
     logger.info(`Récupération de l'historique de la session ${sessionId}`);
 
-      const sessionResult = await pool.query(
+    const sessionResult = await pool.query(
       "SELECT * FROM game_sessions WHERE id = $1",
       [sessionId]
     );
@@ -394,7 +406,7 @@ const getPathStats = async (req, res) => {
       [sessionId]
     );
 
-    const currentPath = pathResult.rows.map(r => r.page_mongo_id);
+    const currentPath = pathResult.rows.map((r) => r.page_mongo_id);
 
     const allPathsResult = await pool.query(
       `SELECT sp.session_id, sp.page_mongo_id, sp.step_order
@@ -406,7 +418,7 @@ const getPathStats = async (req, res) => {
     );
 
     const sessionPaths = {};
-    allPathsResult.rows.forEach(row => {
+    allPathsResult.rows.forEach((row) => {
       if (!sessionPaths[row.session_id]) {
         sessionPaths[row.session_id] = [];
       }
@@ -416,7 +428,7 @@ const getPathStats = async (req, res) => {
     let totalSessions = Object.keys(sessionPaths).length;
     let similarSessions = 0;
 
-    Object.values(sessionPaths).forEach(path => {
+    Object.values(sessionPaths).forEach((path) => {
       const minLength = Math.min(currentPath.length, path.length);
       let matches = 0;
 
@@ -431,9 +443,10 @@ const getPathStats = async (req, res) => {
       }
     });
 
-    const similarityPercentage = totalSessions > 0
-      ? Math.round((similarSessions / totalSessions) * 100)
-      : 0;
+    const similarityPercentage =
+      totalSessions > 0
+        ? Math.round((similarSessions / totalSessions) * 100)
+        : 0;
 
     let endStats = null;
     if (session.is_completed && session.end_page_mongo_id) {
@@ -457,7 +470,8 @@ const getPathStats = async (req, res) => {
       endStats = {
         endPageId: session.end_page_mongo_id,
         timesReached: endCount,
-        percentage: totalCount > 0 ? Math.round((endCount / totalCount) * 100) : 0,
+        percentage:
+          totalCount > 0 ? Math.round((endCount / totalCount) * 100) : 0,
       };
     }
 
@@ -506,9 +520,7 @@ const getUnlockedEndings = async (req, res) => {
     }).select("_id endLabel illustration stats");
 
     const endingsWithDetails = unlockedEndings.map((ending) => {
-      const page = pages.find(
-        (p) => p._id.toString() === ending.page_mongo_id
-      );
+      const page = pages.find((p) => p._id.toString() === ending.page_mongo_id);
       return {
         pageId: ending.page_mongo_id,
         endLabel: page?.endLabel || "Fin sans titre",
@@ -545,4 +557,3 @@ module.exports = {
   getUnlockedEndings,
   getPathStats,
 };
-

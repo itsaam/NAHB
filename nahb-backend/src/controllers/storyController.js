@@ -140,7 +140,9 @@ const getStoryById = async (req, res) => {
         !req.user ||
         (req.user.id !== story.authorPostgresId && req.user.role !== "admin")
       ) {
-        logger.warn(`Tentative d'accès non autorisée à un brouillon : ${id}`);
+        logger.warn(
+          `Tentative d'accès non autorisée à un brouillon : ${id} - User ID: ${req.user?.id}, Author ID: ${story.authorPostgresId}, Role: ${req.user?.role}`
+        );
         return res.status(403).json({
           success: false,
           error: "Vous n'avez pas accès à cette histoire.",
