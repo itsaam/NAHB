@@ -1,14 +1,9 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const logger = require("./logger");
 
-// Configuration du transporteur email
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+// Configuration de Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = process.env.FROM_EMAIL || "onboarding@resend.dev";
 
 /**
  * Envoyer un email de réinitialisation de mot de passe
@@ -19,11 +14,12 @@ const transporter = nodemailer.createTransport({
 const sendPasswordResetEmail = async (to, resetToken, pseudo) => {
   const resetUrl = `${process.env.CORS_ORIGIN}/reset-password?token=${resetToken}`;
 
-  const mailOptions = {
-    from: `"NAHB" <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "Réinitialise ton mot de passe",
-    html: `
+  try {
+    await resend.emails.send({
+      from: `NAHB <${FROM_EMAIL}>`,
+      to,
+      subject: "Réinitialise ton mot de passe",
+      html: `
       <!DOCTYPE html>
       <html lang="fr">
       <head>
@@ -117,11 +113,9 @@ const sendPasswordResetEmail = async (to, resetToken, pseudo) => {
         </table>
       </body>
       </html>
-    `,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
+      `,
+    });
+    
     logger.info(`Email de réinitialisation envoyé à ${to}`);
     return true;
   } catch (error) {
@@ -136,11 +130,12 @@ const sendPasswordResetEmail = async (to, resetToken, pseudo) => {
  * @param {string} pseudo - Pseudo de l'utilisateur
  */
 const sendWelcomeEmail = async (to, pseudo) => {
-  const mailOptions = {
-    from: `"NAHB" <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "Bienvenue sur NAHB",
-    html: `
+  try {
+    await resend.emails.send({
+      from: `NAHB <${FROM_EMAIL}>`,
+      to,
+      subject: "Bienvenue sur NAHB",
+      html: `
       <!DOCTYPE html>
       <html lang="fr">
       <head>
@@ -246,11 +241,9 @@ const sendWelcomeEmail = async (to, pseudo) => {
         </table>
       </body>
       </html>
-    `,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
+      `,
+    });
+    
     logger.info(`Email de bienvenue envoyé à ${to}`);
     return true;
   } catch (error) {

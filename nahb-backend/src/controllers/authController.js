@@ -396,11 +396,18 @@ const forgotPassword = async (req, res) => {
       [resetTokenHash, resetTokenExpiry, user.id]
     );
 
-    // Envoyer l'email
-    await sendPasswordResetEmail(user.email, resetToken, user.pseudo);
+    // Envoyer l'email en arrière-plan (ne pas attendre)
+    sendPasswordResetEmail(user.email, resetToken, user.pseudo)
+      .then(() => {
+        logger.info(`Email de réinitialisation envoyé à ${user.id}`);
+      })
+      .catch((err) => {
+        logger.error(
+          `Erreur envoi email réinitialisation à ${user.email}: ${err.message}`
+        );
+      });
 
-    logger.info(`Email de réinitialisation envoyé à ${user.id}`);
-
+    // Répondre immédiatement sans attendre l'email
     return success(res, {
       message: "Si cet email existe, un lien de réinitialisation a été envoyé.",
     });
