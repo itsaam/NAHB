@@ -1,75 +1,125 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  BookOpen,
+  PenTool,
+  LayoutDashboard,
+  LogOut,
+  Crown,
+  User,
+} from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="bg-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link to="/" className="flex items-center">
-              <span className="text-2xl font-bold text-indigo-600">NAHB</span>
-            </Link>
+    <nav
+      className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur shadow-sm"
+      style={{ borderColor: "hsl(240 6% 90%)" }}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between relative">
+          {/* Logo à gauche */}
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl">
+            <BookOpen className="h-6 w-6 text-blue-600" />
+            <span>NAHB</span>
+          </Link>
 
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+          {/* Navigation au centre */}
+          {user && (
+            <div className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
               <Link
                 to="/stories"
-                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-indigo-600"
+                className={`text-sm font-medium transition-colors ${
+                  isActive("/stories")
+                    ? "text-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
               >
                 Histoires
               </Link>
 
-              {user && (user.role === 'auteur' || user.role === 'admin') && (
+              {(user.role === "auteur" || user.role === "admin") && (
                 <Link
                   to="/my-stories"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-indigo-600"
+                  className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive("/my-stories")
+                      ? "text-gray-900"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
                 >
+                  <PenTool className="w-4 h-4" />
                   Mes histoires
                 </Link>
               )}
 
-              {user && user.role === 'admin' && (
+              {user.role === "admin" && (
                 <Link
                   to="/admin"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-indigo-600"
+                  className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive("/admin")
+                      ? "text-gray-900"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
                 >
+                  <LayoutDashboard className="w-4 h-4" />
                   Admin
                 </Link>
               )}
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center">
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">
-                  👤 {user.pseudo}
-                  {user.role === 'admin' && ' 👑'}
-                  {user.role === 'auteur' && ' ✍️'}
-                </span>
-                <button
-                  onClick={logout}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Déconnexion
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
+          {/* User info et logout à droite */}
+
+          <div className="flex items-center gap-3">
+            {!user ? (
+              <>
                 <Link
                   to="/login"
-                  className="text-sm font-medium text-gray-700 hover:text-indigo-600"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 transition-colors hover:bg-gray-100"
                 >
-                  Connexion
+                  Se connecter
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                 >
-                  Inscription
+                  S'inscrire
                 </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 hidden sm:flex items-center gap-1.5">
+                  {user.pseudo}
+                  {user.role === "admin" && (
+                    <Crown className="w-4 h-4 text-yellow-500" />
+                  )}
+                </span>
+                <Link
+                  to="/profile"
+                  className="inline-flex items-center justify-center rounded-full h-10 w-10 transition-colors hover:opacity-80 border-2 border-gray-200 overflow-hidden"
+                  aria-label="Mon profil"
+                >
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-600" />
+                  )}
+                </Link>
+                <button
+                  onClick={logout}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 w-10 transition-colors hover:bg-gray-100"
+                  aria-label="Se déconnecter"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
             )}
           </div>
@@ -78,4 +128,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
