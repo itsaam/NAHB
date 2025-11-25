@@ -67,14 +67,26 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/users", userRoutes);
 
-// Route 404
-app.use((req, res) => {
-  logger.warn(`Route introuvable : ${req.method} ${req.path}`);
-  res.status(404).json({
-    success: false,
-    error: "Route introuvable.",
+// Servir le frontend en production
+if (process.env.NODE_ENV === "production") {
+  const path = require("path");
+  const frontendPath = path.join(__dirname, "../../nahb-frontend/dist");
+
+  app.use(express.static(frontendPath));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
-});
+} else {
+  // Route 404 en dev
+  app.use((req, res) => {
+    logger.warn(`Route introuvable : ${req.method} ${req.path}`);
+    res.status(404).json({
+      success: false,
+      error: "Route introuvable.",
+    });
+  });
+}
 
 // ==================== GESTION DES ERREURS ====================
 
