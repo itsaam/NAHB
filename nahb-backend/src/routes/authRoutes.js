@@ -4,6 +4,11 @@ const {
   register,
   login,
   getProfile,
+  checkStatus,
+  updateProfile,
+  updatePassword,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
 const { authenticate } = require("../middlewares/authMiddleware");
 const {
@@ -93,5 +98,51 @@ router.post("/login", validate(loginSchema), login);
  * @access  Privé
  */
 router.get("/profile", authenticate, getProfile);
+
+/**
+ * @swagger
+ * /auth/status:
+ *   get:
+ *     summary: Vérifier le statut de l'utilisateur (ban check)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statut OK
+ *       403:
+ *         description: Utilisateur banni
+ *       401:
+ *         description: Non authentifié
+ */
+router.get("/status", authenticate, checkStatus);
+
+/**
+ * @route   PUT /api/auth/profile
+ * @desc    Mettre à jour le profil (email, avatar)
+ * @access  Privé
+ */
+router.put("/profile", authenticate, updateProfile);
+
+/**
+ * @route   PUT /api/auth/password
+ * @desc    Changer le mot de passe
+ * @access  Privé
+ */
+router.put("/password", authenticate, updatePassword);
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Demander une réinitialisation de mot de passe
+ * @access  Public
+ */
+router.post("/forgot-password", forgotPassword);
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Réinitialiser le mot de passe avec le token
+ * @access  Public
+ */
+router.post("/reset-password", resetPassword);
 
 module.exports = router;
