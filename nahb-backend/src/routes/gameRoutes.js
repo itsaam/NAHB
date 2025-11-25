@@ -31,7 +31,7 @@ const { authenticate } = require("../middlewares/authMiddleware");
  *       201:
  *         description: Session créée
  */
-router.post("/start", startGame);
+router.post("/start", authenticate, startGame);
 
 /**
  * @swagger

@@ -80,6 +80,44 @@ const authenticate = async (req, res, next) => {
 };
 
 /**
+ * Middleware d'authentification optionnelle
+ * Ajoute req.user si un token valide est présent, sinon continue sans erreur
+ */
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      // Pas de token, on continue sans user
+      return next();
+    }
+
+    const token = authHeader.substring(7);
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      const result = await pool.query(
+        "SELECT id, pseudo, email, role, is_banned FROM users WHERE id = $1",
+        [decoded.userId]
+      );
+
+      if (result.rows.length > 0 && !result.rows[0].is_banned) {
+        req.user = result.rows[0];
+      }
+    } catch (err) {
+      // Token invalide ou expiré, on continue sans user
+      logger.debug(`Token invalide ou expiré (optionalAuth): ${err.message}`);
+    }
+
+    next();
+  } catch (err) {
+    logger.error(`Erreur middleware optionalAuth : ${err.message}`);
+    next(); // Continue même en cas d'erreur
+  }
+};
+
+/**
  * Middleware pour vérifier le rôle admin
  */
 const requireAdmin = (req, res, next) => {
@@ -146,4 +184,4 @@ const requireAuthor = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, requireAdmin, requireAuthor };
+module.exports = { authenticate, optionalAuth, requireAdmin, requireAuthor };
