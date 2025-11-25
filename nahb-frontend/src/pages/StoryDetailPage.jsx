@@ -329,32 +329,37 @@ export default function StoryDetailPage() {
           ) : (
             <div className="space-y-4">
               {reviews.map((review) => (
-                <div key={review.id} className="border-b border-gray-200 pb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-gray-900">
-                        {review.pseudo}
-                      </span>
-                      <div className="flex gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < review.rating
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "fill-gray-200 text-gray-300"
-                            }`}
-                          />
-                        ))}
+                <div
+                  key={review.id}
+                  className="border-b border-gray-200 pb-4 last:border-b-0"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-bold text-gray-900 text-base">
+                          {review.pseudo || "Utilisateur inconnu"}
+                        </span>
+                        <div className="flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-5 h-5 ${
+                                i < review.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "fill-gray-200 text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
                       </div>
+                      {review.comment && (
+                        <p className="text-gray-700 mt-2">{review.comment}</p>
+                      )}
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 ml-4 flex-shrink-0">
                       {new Date(review.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  {review.comment && (
-                    <p className="text-gray-700">{review.comment}</p>
-                  )}
                 </div>
               ))}
             </div>

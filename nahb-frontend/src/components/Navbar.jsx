@@ -100,14 +100,14 @@ export default function Navbar() {
                 </span>
                 <Link
                   to="/profile"
-                  className="inline-flex items-center justify-center rounded-full h-10 w-10 transition-colors hover:opacity-80 border-2 border-gray-200 overflow-hidden"
+                  className="inline-flex items-center justify-center rounded-full h-10 w-10 transition-colors hover:opacity-80 border-2 border-gray-200 overflow-hidden flex-shrink-0"
                   aria-label="Mon profil"
                 >
                   {user.avatar ? (
                     <img
                       src={user.avatar}
                       alt="Avatar"
-                      className="w-full h-full object-cover"
+                      className="w-10 h-10 object-cover"
                     />
                   ) : (
                     <User className="h-5 w-5 text-gray-600" />
