@@ -1,9 +1,20 @@
 const { Resend } = require("resend");
 const logger = require("./logger");
 
-// Configuration de Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Configuration de Resend avec fallback
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.FROM_EMAIL || "onboarding@resend.dev";
+
+// Initialiser Resend seulement si l'API key est présente
+let resend = null;
+if (RESEND_API_KEY) {
+  resend = new Resend(RESEND_API_KEY);
+  logger.info("✅ Resend configuré pour l'envoi d'emails");
+} else {
+  logger.warn(
+    "⚠️  RESEND_API_KEY non définie - les emails ne seront pas envoyés"
+  );
+}
 
 /**
  * Envoyer un email de réinitialisation de mot de passe
@@ -12,6 +23,13 @@ const FROM_EMAIL = process.env.FROM_EMAIL || "onboarding@resend.dev";
  * @param {string} pseudo - Pseudo de l'utilisateur
  */
 const sendPasswordResetEmail = async (to, resetToken, pseudo) => {
+  if (!resend) {
+    logger.warn(
+      `⚠️  Email de réinitialisation non envoyé à ${to} (Resend non configuré)`
+    );
+    return false;
+  }
+
   const resetUrl = `${process.env.CORS_ORIGIN}/reset-password?token=${resetToken}`;
 
   try {
@@ -115,7 +133,7 @@ const sendPasswordResetEmail = async (to, resetToken, pseudo) => {
       </html>
       `,
     });
-    
+
     logger.info(`Email de réinitialisation envoyé à ${to}`);
     return true;
   } catch (error) {
@@ -130,6 +148,13 @@ const sendPasswordResetEmail = async (to, resetToken, pseudo) => {
  * @param {string} pseudo - Pseudo de l'utilisateur
  */
 const sendWelcomeEmail = async (to, pseudo) => {
+  if (!resend) {
+    logger.warn(
+      `⚠️  Email de bienvenue non envoyé à ${to} (Resend non configuré)`
+    );
+    return false;
+  }
+
   try {
     await resend.emails.send({
       from: `NAHB <${FROM_EMAIL}>`,
@@ -243,7 +268,7 @@ const sendWelcomeEmail = async (to, pseudo) => {
       </html>
       `,
     });
-    
+
     logger.info(`Email de bienvenue envoyé à ${to}`);
     return true;
   } catch (error) {
