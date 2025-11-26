@@ -244,6 +244,14 @@ const updateStory = async (req, res) => {
       }
     }
 
+    if (updates.status === "publié" && !story.startPageId && !updates.startPageId) {
+      logger.warn(`Tentative de publication sans page de départ : ${id}`);
+      return res.status(400).json({
+        success: false,
+        error: "Vous devez définir une page de départ avant de publier cette histoire.",
+      });
+    }
+
     // Mettre à jour les champs
     Object.keys(updates).forEach((key) => {
       if (updates[key] !== undefined) {

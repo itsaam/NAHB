@@ -78,6 +78,7 @@ export const gameAPI = {
   getMySessions: () => api.get("/game/my-sessions"),
   getUnlockedEndings: (storyId) => api.get(`/game/story/${storyId}/endings`),
   getPathStats: (sessionId) => api.get(`/game/session/${sessionId}/stats`),
+  getMyActivities: () => api.get("/game/my-activities"),
 };
 
 // ==================== REVIEWS ====================
