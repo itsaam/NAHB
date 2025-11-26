@@ -209,7 +209,7 @@ const checkStatus = async (req, res) => {
     const userId = req.user.id;
 
     const result = await pool.query(
-      "SELECT is_banned FROM users WHERE id = $1",
+      "SELECT is_banned, ban_type, ban_reason, banned_at FROM users WHERE id = $1",
       [userId]
     );
 
@@ -222,13 +222,13 @@ const checkStatus = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Si banni, retourner erreur 403
-    if (user.is_banned) {
-      return forbidden(res, "Votre compte a été banni par un administrateur.");
-    }
-
-    // Sinon, tout va bien
-    return success(res, { isBanned: false });
+    // Retourner les infos de ban (le frontend gère l'affichage)
+    return success(res, { 
+      isBanned: user.is_banned,
+      banType: user.ban_type,
+      banReason: user.ban_reason,
+      bannedAt: user.banned_at,
+    });
   } catch (err) {
     logger.error(`Erreur checkStatus : ${err.message}`);
     return serverError(res);

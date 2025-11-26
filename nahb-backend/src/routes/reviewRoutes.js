@@ -6,7 +6,7 @@ const {
   getMyReviews,
   deleteReview,
 } = require("../controllers/reviewController");
-const { authenticate } = require("../middlewares/authMiddleware");
+const { authenticate, canComment } = require("../middlewares/authMiddleware");
 const {
   validate,
   createReviewSchema,
@@ -17,7 +17,7 @@ const {
  * @desc    Créer ou mettre à jour une review
  * @access  Privé
  */
-router.post("/", authenticate, validate(createReviewSchema), createReview);
+router.post("/", authenticate, canComment, validate(createReviewSchema), createReview);
 
 /**
  * @route   GET /api/reviews/story/:storyId

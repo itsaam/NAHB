@@ -12,6 +12,7 @@ const {
   authenticate,
   optionalAuth,
   requireAuthor,
+  canCreateStory,
 } = require("../middlewares/authMiddleware");
 const {
   validate,
@@ -73,6 +74,7 @@ router.post(
   "/",
   authenticate,
   requireAuthor,
+  canCreateStory,
   validate(createStorySchema),
   createStory
 );
@@ -110,6 +112,7 @@ router.put(
   "/:id",
   authenticate,
   requireAuthor,
+  canCreateStory,
   validate(updateStorySchema),
   updateStory
 );

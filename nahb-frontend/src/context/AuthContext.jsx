@@ -1,7 +1,15 @@
-import { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useState, useContext, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { authAPI } from "../services/api";
 
 const AuthContext = createContext(null);
+
+// Messages selon le type de ban
+const BAN_MESSAGES = {
+  full: "Votre compte a été banni par un administrateur.",
+  author: "Vous n'êtes plus autorisé à créer ou modifier des histoires.",
+  comment: "Vous n'êtes plus autorisé à poster des commentaires.",
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -13,7 +21,9 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [banStatus, setBanStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const previousBanStatus = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -32,16 +42,48 @@ export const AuthProvider = ({ children }) => {
 
     const checkBanStatus = async () => {
       try {
-        await authAPI.checkStatus();
+        const response = await authAPI.checkStatus();
+        const data = response.data.data;
+        
+        // Détecter un nouveau ban
+        if (data.isBanned && !previousBanStatus.current?.isBanned) {
+          const message = BAN_MESSAGES[data.banType] || BAN_MESSAGES.full;
+          const reason = data.banReason ? ` Raison : ${data.banReason}` : "";
+          
+          // Si ban complet, déconnecter
+          if (data.banType === "full") {
+            toast.error(`${message}${reason}`, { duration: 10000 });
+            logout();
+            window.location.href = "/";
+          } else {
+            // Sinon, juste notifier
+            toast.warning(`${message}${reason}`, { duration: 8000 });
+          }
+        }
+        
+        // Détecter un déban
+        if (!data.isBanned && previousBanStatus.current?.isBanned) {
+          toast.success("Votre compte a été rétabli !", { duration: 5000 });
+        }
+        
+        previousBanStatus.current = data;
+        setBanStatus(data);
       } catch (error) {
         if (error.response?.status === 403) {
-          // Utilisateur banni
+          const banType = error.response?.data?.banType || "full";
+          const banReason = error.response?.data?.banReason;
+          const message = BAN_MESSAGES[banType];
+          const reason = banReason ? ` Raison : ${banReason}` : "";
+          
+          toast.error(`${message}${reason}`, { duration: 10000 });
           logout();
-          alert("Votre compte a été banni par un administrateur.");
           window.location.href = "/";
         }
       }
     };
+
+    // Check immédiat au chargement
+    checkBanStatus();
 
     const interval = setInterval(checkBanStatus, 30000); // 30 secondes
 
@@ -123,11 +165,16 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = () => !!user;
   const isAuthor = () => user?.role === "auteur" || user?.role === "admin";
   const isAdmin = () => user?.role === "admin";
+  
+  // Helpers pour vérifier les restrictions de ban
+  const canCreateStory = () => !banStatus?.isBanned || (banStatus?.banType !== "author" && banStatus?.banType !== "full");
+  const canComment = () => !banStatus?.isBanned || (banStatus?.banType !== "comment" && banStatus?.banType !== "full");
 
   const value = {
     user,
     setUser,
     loading,
+    banStatus,
     login,
     register,
     getProfile,
@@ -135,6 +182,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     isAuthor,
     isAdmin,
+    canCreateStory,
+    canComment,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
