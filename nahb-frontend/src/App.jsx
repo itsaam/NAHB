@@ -107,9 +107,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppContent />
-        <Toaster 
-          position="top-right" 
-          richColors 
+        <Toaster
+          position="top-right"
+          richColors
           closeButton
           toastOptions={{
             duration: 5000,

@@ -54,8 +54,12 @@ const migrate = async () => {
     `);
 
     if (result.rows.length > 0) {
-      console.log(`✅ ${result.rows.length} utilisateurs bannis mis à jour avec ban_type = 'full'`);
-      result.rows.forEach(user => console.log(`   - ${user.pseudo} (ID: ${user.id})`));
+      console.log(
+        `✅ ${result.rows.length} utilisateurs bannis mis à jour avec ban_type = 'full'`
+      );
+      result.rows.forEach((user) =>
+        console.log(`   - ${user.pseudo} (ID: ${user.id})`)
+      );
     }
 
     console.log("✅ Migration terminée avec succès !");

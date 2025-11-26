@@ -17,7 +17,13 @@ const {
  * @desc    Créer ou mettre à jour une review
  * @access  Privé
  */
-router.post("/", authenticate, canComment, validate(createReviewSchema), createReview);
+router.post(
+  "/",
+  authenticate,
+  canComment,
+  validate(createReviewSchema),
+  createReview
+);
 
 /**
  * @route   GET /api/reviews/story/:storyId
@@ -41,4 +47,3 @@ router.get("/my", authenticate, getMyReviews);
 router.delete("/:id", authenticate, deleteReview);
 
 module.exports = router;
-

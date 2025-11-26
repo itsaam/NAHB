@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { adminAPI } from "../services/api";
-import { Users, BookOpen, PlayCircle, Star, Flag, Ban, PenOff, MessageSquareOff } from "lucide-react";
+import {
+  Users,
+  BookOpen,
+  PlayCircle,
+  Star,
+  Flag,
+  Ban,
+  PenOff,
+  MessageSquareOff,
+} from "lucide-react";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -82,9 +91,13 @@ export default function AdminDashboard() {
     try {
       const response = await adminAPI.handleReport(reportId, action);
       if (response.data.data.storySuspended) {
-        toast.warning("Signalement traité - Histoire suspendue automatiquement (5+ signalements)");
+        toast.warning(
+          "Signalement traité - Histoire suspendue automatiquement (5+ signalements)"
+        );
       } else {
-        toast.success(`Signalement ${action === "resolved" ? "accepté" : "rejeté"}`);
+        toast.success(
+          `Signalement ${action === "resolved" ? "accepté" : "rejeté"}`
+        );
       }
       loadData();
     } catch (err) {
@@ -280,12 +293,12 @@ export default function AdminDashboard() {
                                         : "bg-primary/10 text-primary"
                                     }`}
                                   >
-                                    {user.is_banned 
-                                      ? user.ban_type === "full" 
-                                        ? "Banni" 
+                                    {user.is_banned
+                                      ? user.ban_type === "full"
+                                        ? "Banni"
                                         : user.ban_type === "author"
-                                          ? "Ban Auteur"
-                                          : "Ban Commentaire"
+                                        ? "Ban Auteur"
+                                        : "Ban Commentaire"
                                       : "Actif"}
                                   </span>
                                 </td>
@@ -294,7 +307,9 @@ export default function AdminDashboard() {
                                     <div className="flex gap-2 flex-wrap">
                                       {user.is_banned ? (
                                         <button
-                                          onClick={() => handleUnbanUser(user.id)}
+                                          onClick={() =>
+                                            handleUnbanUser(user.id)
+                                          }
                                           className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium h-9 rounded-md px-3 border border-input bg-background transition-colors hover:bg-accent hover:text-accent-foreground"
                                         >
                                           Débannir
@@ -302,7 +317,9 @@ export default function AdminDashboard() {
                                       ) : (
                                         <>
                                           <button
-                                            onClick={() => handleBanUser(user.id, "full")}
+                                            onClick={() =>
+                                              handleBanUser(user.id, "full")
+                                            }
                                             className="inline-flex items-center gap-1 justify-center whitespace-nowrap text-xs font-medium h-8 rounded-md px-2 border border-destructive text-destructive bg-background transition-colors hover:bg-destructive hover:text-white"
                                             title="Ban complet"
                                           >
@@ -311,7 +328,9 @@ export default function AdminDashboard() {
                                           </button>
                                           {user.role === "auteur" && (
                                             <button
-                                              onClick={() => handleBanUser(user.id, "author")}
+                                              onClick={() =>
+                                                handleBanUser(user.id, "author")
+                                              }
                                               className="inline-flex items-center gap-1 justify-center whitespace-nowrap text-xs font-medium h-8 rounded-md px-2 border border-orange-500 text-orange-500 bg-background transition-colors hover:bg-orange-500 hover:text-white"
                                               title="Interdit de créer des histoires"
                                             >
@@ -320,7 +339,9 @@ export default function AdminDashboard() {
                                             </button>
                                           )}
                                           <button
-                                            onClick={() => handleBanUser(user.id, "comment")}
+                                            onClick={() =>
+                                              handleBanUser(user.id, "comment")
+                                            }
                                             className="inline-flex items-center gap-1 justify-center whitespace-nowrap text-xs font-medium h-8 rounded-md px-2 border border-yellow-500 text-yellow-500 bg-background transition-colors hover:bg-yellow-500 hover:text-white"
                                             title="Interdit de commenter"
                                           >

@@ -223,7 +223,7 @@ const checkStatus = async (req, res) => {
     const user = result.rows[0];
 
     // Retourner les infos de ban (le frontend gère l'affichage)
-    return success(res, { 
+    return success(res, {
       isBanned: user.is_banned,
       banType: user.ban_type,
       banReason: user.ban_reason,

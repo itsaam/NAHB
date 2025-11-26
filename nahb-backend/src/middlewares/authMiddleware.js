@@ -44,7 +44,9 @@ const authenticate = async (req, res, next) => {
 
     // Vérifier si l'utilisateur est complètement banni (ban_type = 'full')
     if (user.is_banned && user.ban_type === "full") {
-      logger.warn(`Utilisateur banni (full) ${user.id} a tenté de se connecter`);
+      logger.warn(
+        `Utilisateur banni (full) ${user.id} a tenté de se connecter`
+      );
       return res.status(403).json({
         success: false,
         error: "Votre compte a été banni par un administrateur.",
@@ -199,8 +201,13 @@ const canCreateStory = (req, res, next) => {
       });
     }
 
-    if (req.user.is_banned && (req.user.ban_type === "author" || req.user.ban_type === "full")) {
-      logger.warn(`Utilisateur banni (${req.user.ban_type}) ${req.user.id} a tenté de créer une histoire`);
+    if (
+      req.user.is_banned &&
+      (req.user.ban_type === "author" || req.user.ban_type === "full")
+    ) {
+      logger.warn(
+        `Utilisateur banni (${req.user.ban_type}) ${req.user.id} a tenté de créer une histoire`
+      );
       return res.status(403).json({
         success: false,
         error: "Vous n'êtes plus autorisé à créer ou modifier des histoires.",
@@ -232,8 +239,13 @@ const canComment = (req, res, next) => {
       });
     }
 
-    if (req.user.is_banned && (req.user.ban_type === "comment" || req.user.ban_type === "full")) {
-      logger.warn(`Utilisateur banni (${req.user.ban_type}) ${req.user.id} a tenté de commenter`);
+    if (
+      req.user.is_banned &&
+      (req.user.ban_type === "comment" || req.user.ban_type === "full")
+    ) {
+      logger.warn(
+        `Utilisateur banni (${req.user.ban_type}) ${req.user.id} a tenté de commenter`
+      );
       return res.status(403).json({
         success: false,
         error: "Vous n'êtes plus autorisé à poster des commentaires.",
@@ -252,4 +264,11 @@ const canComment = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, optionalAuth, requireAdmin, requireAuthor, canCreateStory, canComment };
+module.exports = {
+  authenticate,
+  optionalAuth,
+  requireAdmin,
+  requireAuthor,
+  canCreateStory,
+  canComment,
+};

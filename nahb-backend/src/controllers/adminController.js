@@ -23,7 +23,9 @@ const banUser = async (req, res) => {
       });
     }
 
-    logger.info(`Admin ${adminId} bannit l'utilisateur ${userId} (type: ${banType})`);
+    logger.info(
+      `Admin ${adminId} bannit l'utilisateur ${userId} (type: ${banType})`
+    );
 
     // Vérifier que l'utilisateur existe
     const userCheck = await pool.query(
@@ -68,7 +70,9 @@ const banUser = async (req, res) => {
       comment: "interdit de commenter",
     };
 
-    logger.info(`Utilisateur ${userId} (${user.pseudo}) ${banTypeLabels[banType]}`);
+    logger.info(
+      `Utilisateur ${userId} (${user.pseudo}) ${banTypeLabels[banType]}`
+    );
 
     return res.status(200).json({
       success: true,
@@ -451,10 +455,10 @@ const handleReport = async (req, res) => {
     const report = reportResult.rows[0];
 
     // Mettre à jour le signalement
-    await pool.query(
-      "UPDATE reports SET status = $1 WHERE id = $2",
-      [status, reportId]
-    );
+    await pool.query("UPDATE reports SET status = $1 WHERE id = $2", [
+      status,
+      reportId,
+    ]);
 
     let storySuspended = false;
 
@@ -466,19 +470,23 @@ const handleReport = async (req, res) => {
       );
 
       const resolvedCount = parseInt(countResult.rows[0].count);
-      logger.info(`Histoire ${report.story_mongo_id} : ${resolvedCount} signalements acceptés`);
+      logger.info(
+        `Histoire ${report.story_mongo_id} : ${resolvedCount} signalements acceptés`
+      );
 
       // Si >= 5 signalements acceptés, suspendre automatiquement l'histoire
       if (resolvedCount >= REPORTS_THRESHOLD) {
         const story = await Story.findById(report.story_mongo_id);
-        
+
         if (story && !story.isSuspended) {
           story.isSuspended = true;
           story.suspendedReason = `Suspension automatique : ${resolvedCount} signalements acceptés`;
           await story.save();
-          
+
           storySuspended = true;
-          logger.info(`Histoire ${report.story_mongo_id} suspendue automatiquement (${resolvedCount} signalements)`);
+          logger.info(
+            `Histoire ${report.story_mongo_id} suspendue automatiquement (${resolvedCount} signalements)`
+          );
         }
       }
     }
@@ -491,7 +499,7 @@ const handleReport = async (req, res) => {
         ...report,
         status,
         storySuspended,
-        message: storySuspended 
+        message: storySuspended
           ? "Signalement traité. L'histoire a été automatiquement suspendue (5+ signalements acceptés)."
           : "Signalement traité avec succès.",
       },

@@ -44,12 +44,12 @@ export const AuthProvider = ({ children }) => {
       try {
         const response = await authAPI.checkStatus();
         const data = response.data.data;
-        
+
         // Détecter un nouveau ban
         if (data.isBanned && !previousBanStatus.current?.isBanned) {
           const message = BAN_MESSAGES[data.banType] || BAN_MESSAGES.full;
           const reason = data.banReason ? ` Raison : ${data.banReason}` : "";
-          
+
           // Si ban complet, déconnecter
           if (data.banType === "full") {
             toast.error(`${message}${reason}`, { duration: 10000 });
@@ -60,12 +60,12 @@ export const AuthProvider = ({ children }) => {
             toast.warning(`${message}${reason}`, { duration: 8000 });
           }
         }
-        
+
         // Détecter un déban
         if (!data.isBanned && previousBanStatus.current?.isBanned) {
           toast.success("Votre compte a été rétabli !", { duration: 5000 });
         }
-        
+
         previousBanStatus.current = data;
         setBanStatus(data);
       } catch (error) {
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
           const banReason = error.response?.data?.banReason;
           const message = BAN_MESSAGES[banType];
           const reason = banReason ? ` Raison : ${banReason}` : "";
-          
+
           toast.error(`${message}${reason}`, { duration: 10000 });
           logout();
           window.location.href = "/";
@@ -165,10 +165,14 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = () => !!user;
   const isAuthor = () => user?.role === "auteur" || user?.role === "admin";
   const isAdmin = () => user?.role === "admin";
-  
+
   // Helpers pour vérifier les restrictions de ban
-  const canCreateStory = () => !banStatus?.isBanned || (banStatus?.banType !== "author" && banStatus?.banType !== "full");
-  const canComment = () => !banStatus?.isBanned || (banStatus?.banType !== "comment" && banStatus?.banType !== "full");
+  const canCreateStory = () =>
+    !banStatus?.isBanned ||
+    (banStatus?.banType !== "author" && banStatus?.banType !== "full");
+  const canComment = () =>
+    !banStatus?.isBanned ||
+    (banStatus?.banType !== "comment" && banStatus?.banType !== "full");
 
   const value = {
     user,

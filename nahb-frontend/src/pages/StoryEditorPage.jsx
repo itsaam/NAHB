@@ -25,7 +25,7 @@ export default function StoryEditorPage() {
 
   const [choiceForm, setChoiceForm] = useState({
     text: "",
-    nextPageId: "",
+    targetPageId: "",
   });
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export default function StoryEditorPage() {
     try {
       await pagesAPI.addChoice(selectedPage._id, choiceForm);
       setShowAddChoiceModal(false);
-      setChoiceForm({ text: "", nextPageId: "" });
+      setChoiceForm({ text: "", targetPageId: "" });
       loadStoryAndPages();
       alert("✅ Choix ajouté !");
     } catch (err) {
@@ -510,11 +510,11 @@ export default function StoryEditorPage() {
                       </label>
                       <select
                         required
-                        value={choiceForm.nextPageId}
+                        value={choiceForm.targetPageId}
                         onChange={(e) =>
                           setChoiceForm({
                             ...choiceForm,
-                            nextPageId: e.target.value,
+                            targetPageId: e.target.value,
                           })
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
