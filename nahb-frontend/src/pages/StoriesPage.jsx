@@ -88,7 +88,9 @@ export default function StoriesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stories.length === 0 ? (
                 <div className="col-span-full text-center py-12">
-                  <p className="text-muted-foreground">Aucune histoire trouvée</p>
+                  <p className="text-muted-foreground">
+                    Aucune histoire trouvée
+                  </p>
                 </div>
               ) : (
                 stories.map((story) => (
