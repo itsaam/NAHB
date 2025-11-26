@@ -15,6 +15,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const userRoutes = require("./routes/userRoutes");
+const themeRoutes = require("./routes/themeRoutes");
 
 // Créer l'application Express
 const app = express();
@@ -66,6 +67,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/themes", themeRoutes);
 
 // Servir le frontend en production
 if (process.env.NODE_ENV === "production") {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { adminAPI } from "../services/api";
+import { adminAPI, themesAPI } from "../services/api";
 import {
   Users,
   BookOpen,
@@ -11,6 +11,10 @@ import {
   PenOff,
   MessageSquareOff,
   Gamepad2,
+  Palette,
+  Plus,
+  Trash2,
+  Image,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -18,8 +22,20 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [stories, setStories] = useState([]);
   const [reports, setReports] = useState([]);
+  const [themes, setThemes] = useState([]);
   const [activeTab, setActiveTab] = useState("stats");
   const [loading, setLoading] = useState(true);
+
+  // Modal state pour thèmes
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState(null);
+  const [themeForm, setThemeForm] = useState({
+    name: "",
+    description: "",
+    default_image: "",
+  });
+  const [imageForm, setImageForm] = useState({ image_url: "", alt_text: "" });
 
   useEffect(() => {
     loadData();
@@ -40,6 +56,9 @@ export default function AdminDashboard() {
       } else if (activeTab === "reports") {
         const response = await adminAPI.getReports();
         setReports(response.data.data);
+      } else if (activeTab === "themes") {
+        const response = await themesAPI.getAll();
+        setThemes(response.data.data);
       }
     } catch (err) {
       toast.error("Erreur lors du chargement");
@@ -100,6 +119,55 @@ export default function AdminDashboard() {
           `Signalement ${action === "resolved" ? "accepté" : "rejeté"}`
         );
       }
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erreur");
+    }
+  };
+
+  // ==================== THEMES ====================
+  const handleCreateTheme = async (e) => {
+    e.preventDefault();
+    try {
+      await themesAPI.create(themeForm);
+      toast.success("Thème créé");
+      setShowThemeModal(false);
+      setThemeForm({ name: "", description: "", default_image: "" });
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erreur");
+    }
+  };
+
+  const handleDeleteTheme = async (themeId) => {
+    if (!confirm("Supprimer ce thème et toutes ses images ?")) return;
+    try {
+      await themesAPI.delete(themeId);
+      toast.success("Thème supprimé");
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erreur");
+    }
+  };
+
+  const handleAddImage = async (e) => {
+    e.preventDefault();
+    if (!selectedTheme) return;
+    try {
+      await themesAPI.addImage(selectedTheme.id, imageForm);
+      toast.success("Image ajoutée au catalogue");
+      setShowImageModal(false);
+      setImageForm({ image_url: "", alt_text: "" });
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erreur");
+    }
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    try {
+      await themesAPI.deleteImage(imageId);
+      toast.success("Image supprimée");
       loadData();
     } catch (err) {
       toast.error(err.response?.data?.error || "Erreur");
@@ -200,6 +268,16 @@ export default function AdminDashboard() {
                 }`}
               >
                 Signalements
+              </button>
+              <button
+                onClick={() => setActiveTab("themes")}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+                  activeTab === "themes"
+                    ? "bg-background text-foreground shadow-sm"
+                    : ""
+                }`}
+              >
+                Thèmes
               </button>
             </div>
 
@@ -500,11 +578,255 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 )}
+
+                {/* Themes Tab */}
+                {activeTab === "themes" && (
+                  <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div className="p-6 flex justify-between items-center">
+                      <div>
+                        <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                          Gestion des thèmes
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1.5">
+                          Gérez les thèmes et le catalogue d'images
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowThemeModal(true)}
+                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-10 px-4 bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Nouveau thème
+                      </button>
+                    </div>
+                    <div className="p-6 pt-0 space-y-6">
+                      {themes.map((theme) => (
+                        <div
+                          key={theme.id}
+                          className="rounded-lg border border-border p-4"
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h4 className="font-semibold text-lg flex items-center gap-2">
+                                <Palette className="w-5 h-5 text-primary" />
+                                {theme.name}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {theme.description || "Aucune description"}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedTheme(theme);
+                                  setShowImageModal(true);
+                                }}
+                                className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                              >
+                                <Image className="w-4 h-4" />
+                                Ajouter image
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTheme(theme.id)}
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Catalogue d'images du thème */}
+                          <div className="mt-4">
+                            <p className="text-sm font-medium mb-2">
+                              Catalogue ({theme.images?.length || 0} images)
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                              {theme.images?.map((img) => (
+                                <div
+                                  key={img.id}
+                                  className="relative group rounded-lg overflow-hidden aspect-video bg-muted"
+                                >
+                                  <img
+                                    src={img.image_url}
+                                    alt={img.alt_text || "Image"}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <button
+                                    onClick={() => handleDeleteImage(img.id)}
+                                    className="absolute top-1 right-1 p-1 rounded bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                              {(!theme.images || theme.images.length === 0) && (
+                                <p className="col-span-full text-sm text-muted-foreground">
+                                  Aucune image dans ce thème
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
         </div>
       </main>
+
+      {/* Modal: Créer un thème */}
+      {showThemeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-4">Nouveau thème</h2>
+            <form onSubmit={handleCreateTheme}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Nom du thème *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={themeForm.name}
+                    onChange={(e) =>
+                      setThemeForm({ ...themeForm, name: e.target.value })
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder="Ex: fantastique"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    value={themeForm.description}
+                    onChange={(e) =>
+                      setThemeForm({
+                        ...themeForm,
+                        description: e.target.value,
+                      })
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder="Description du thème"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Image par défaut (URL)
+                  </label>
+                  <input
+                    type="url"
+                    value={themeForm.default_image}
+                    onChange={(e) =>
+                      setThemeForm({
+                        ...themeForm,
+                        default_image: e.target.value,
+                      })
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowThemeModal(false)}
+                  className="flex-1 h-10 px-4 rounded-md border border-input bg-background hover:bg-accent transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 h-10 px-4 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                >
+                  Créer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Ajouter une image */}
+      {showImageModal && selectedTheme && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">
+              Ajouter une image à "{selectedTheme.name}"
+            </h2>
+            <form onSubmit={handleAddImage}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    URL de l'image *
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    value={imageForm.image_url}
+                    onChange={(e) =>
+                      setImageForm({ ...imageForm, image_url: e.target.value })
+                    }
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    Texte alternatif
+                  </label>
+                  <input
+                    type="text"
+                    value={imageForm.alt_text}
+                    onChange={(e) =>
+                      setImageForm({ ...imageForm, alt_text: e.target.value })
+                    }
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Description de l'image"
+                  />
+                </div>
+                {imageForm.image_url && (
+                  <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video">
+                    <img
+                      src={imageForm.image_url}
+                      alt="Aperçu"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImageModal(false);
+                    setSelectedTheme(null);
+                  }}
+                  className="flex-1 h-10 px-4 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 h-10 px-4 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                >
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

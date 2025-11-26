@@ -1,23 +1,60 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { storiesAPI } from "../services/api";
-import { Plus, Edit, Trash2, BookOpen, Star } from "lucide-react";
+import { storiesAPI, themesAPI } from "../services/api";
+import { Plus, Edit, Trash2, BookOpen, Star, Images, X } from "lucide-react";
 
 export default function MyStoriesPage() {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [themes, setThemes] = useState([]);
+  const [showImageCatalog, setShowImageCatalog] = useState(false);
+  const [selectedThemeImages, setSelectedThemeImages] = useState([]);
   const [newStory, setNewStory] = useState({
     title: "",
     description: "",
     theme: "",
     tags: "",
     status: "brouillon",
+    coverImage: "",
   });
 
   useEffect(() => {
     loadMyStories();
+    loadThemes();
   }, []);
+
+  const loadThemes = async () => {
+    try {
+      const response = await themesAPI.getAll();
+      setThemes(response.data.data || []);
+    } catch (err) {
+      console.error("Erreur chargement thèmes:", err);
+    }
+  };
+
+  const handleThemeChange = (themeId) => {
+    setNewStory({ ...newStory, theme: themeId, coverImage: "" });
+    const selectedTheme = themes.find((t) => t.id === parseInt(themeId));
+    if (selectedTheme) {
+      setSelectedThemeImages(selectedTheme.images || []);
+      // Set default image if available
+      if (selectedTheme.default_image_url) {
+        setNewStory((prev) => ({
+          ...prev,
+          theme: themeId,
+          coverImage: selectedTheme.default_image_url,
+        }));
+      }
+    } else {
+      setSelectedThemeImages([]);
+    }
+  };
+
+  const handleSelectImage = (imageUrl) => {
+    setNewStory({ ...newStory, coverImage: imageUrl });
+    setShowImageCatalog(false);
+  };
 
   const loadMyStories = async () => {
     try {
@@ -33,12 +70,22 @@ export default function MyStoriesPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
+      // Trouver le nom du thème à partir de l'ID
+      const selectedTheme = themes.find(
+        (t) => t.id === parseInt(newStory.theme)
+      );
+      const themeName = selectedTheme ? selectedTheme.name : newStory.theme;
+
       const data = {
-        ...newStory,
+        title: newStory.title,
+        description: newStory.description,
+        theme: themeName,
+        coverImage: newStory.coverImage,
         tags: newStory.tags
           .split(",")
           .map((t) => t.trim())
           .filter((t) => t),
+        status: newStory.status,
       };
       await storiesAPI.create(data);
       setShowModal(false);
@@ -48,7 +95,9 @@ export default function MyStoriesPage() {
         theme: "",
         tags: "",
         status: "brouillon",
+        coverImage: "",
       });
+      setSelectedThemeImages([]);
       loadMyStories();
       alert("Histoire créée");
     } catch (err) {
@@ -68,7 +117,10 @@ export default function MyStoriesPage() {
   };
 
   const handlePublish = async (id, title) => {
-    if (!confirm(`Publier "${title}" ? Elle sera visible par tous les lecteurs.`)) return;
+    if (
+      !confirm(`Publier "${title}" ? Elle sera visible par tous les lecteurs.`)
+    )
+      return;
     try {
       await storiesAPI.update(id, { status: "publié" });
       loadMyStories();
@@ -79,7 +131,12 @@ export default function MyStoriesPage() {
   };
 
   const handleUnpublish = async (id, title) => {
-    if (!confirm(`Retirer "${title}" de la publication ? Elle redeviendra un brouillon.`)) return;
+    if (
+      !confirm(
+        `Retirer "${title}" de la publication ? Elle redeviendra un brouillon.`
+      )
+    )
+      return;
     try {
       await storiesAPI.update(id, { status: "brouillon" });
       loadMyStories();
@@ -213,7 +270,9 @@ export default function MyStoriesPage() {
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleUnpublish(story._id, story.title)}
+                          onClick={() =>
+                            handleUnpublish(story._id, story.title)
+                          }
                           className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-yellow-600 text-white hover:bg-yellow-700 transition-colors"
                         >
                           📝 Retirer de la publication
@@ -294,19 +353,60 @@ export default function MyStoriesPage() {
                   <select
                     id="theme"
                     value={newStory.theme}
-                    onChange={(e) =>
-                      setNewStory({ ...newStory, theme: e.target.value })
-                    }
+                    onChange={(e) => handleThemeChange(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Choisir un thème</option>
-                    <option value="fantastique">Fantastique</option>
-                    <option value="science-fiction">Science-Fiction</option>
-                    <option value="horreur">Horreur</option>
-                    <option value="aventure">Aventure</option>
-                    <option value="romance">Romance</option>
-                    <option value="mystère">Mystère</option>
+                    {themes.map((theme) => (
+                      <option key={theme.id} value={theme.id}>
+                        {theme.name}
+                      </option>
+                    ))}
                   </select>
+                </div>
+
+                {/* Image de couverture */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none">
+                    Image de couverture
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="URL de l'image ou sélectionnez du catalogue"
+                      value={newStory.coverImage}
+                      onChange={(e) =>
+                        setNewStory({ ...newStory, coverImage: e.target.value })
+                      }
+                      className="flex h-10 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowImageCatalog(true)}
+                      disabled={
+                        !newStory.theme || selectedThemeImages.length === 0
+                      }
+                      className="inline-flex items-center justify-center h-10 px-4 rounded-md text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Images className="h-4 w-4 mr-2" />
+                      Catalogue
+                    </button>
+                  </div>
+                  {newStory.coverImage && (
+                    <div className="mt-2 relative w-32 h-20 rounded overflow-hidden border">
+                      <img
+                        src={newStory.coverImage}
+                        alt="Aperçu"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  {newStory.theme && selectedThemeImages.length === 0 && (
+                    <p className="text-xs text-amber-600">
+                      Aucune image dans le catalogue de ce thème. Entrez une URL
+                      manuellement.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -367,6 +467,75 @@ export default function MyStoriesPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal du catalogue d'images */}
+      {showImageCatalog && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="text-lg font-semibold">
+                Catalogue d'images -{" "}
+                {themes.find((t) => t.id === parseInt(newStory.theme))?.name}
+              </h3>
+              <button
+                onClick={() => setShowImageCatalog(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
+              {selectedThemeImages.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  Aucune image disponible pour ce thème
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {selectedThemeImages.map((image) => (
+                    <button
+                      key={image.id}
+                      onClick={() => handleSelectImage(image.image_url)}
+                      className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                        newStory.coverImage === image.image_url
+                          ? "border-purple-600 ring-2 ring-purple-300"
+                          : "border-gray-200 hover:border-purple-400"
+                      }`}
+                    >
+                      <img
+                        src={image.image_url}
+                        alt={image.label || "Image"}
+                        className="w-full h-full object-cover"
+                      />
+                      {image.label && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center truncate">
+                          {image.label}
+                        </div>
+                      )}
+                      {newStory.coverImage === image.image_url && (
+                        <div className="absolute top-2 right-2 bg-purple-600 text-white rounded-full p-1">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

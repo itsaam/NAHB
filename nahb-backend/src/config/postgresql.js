@@ -141,6 +141,44 @@ const initTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_unlocked_story ON unlocked_endings(story_mongo_id);
     `);
 
+    // Table themes
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS themes (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL,
+        description TEXT,
+        default_image TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Table theme_images (catalogue d'images par thème)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS theme_images (
+        id SERIAL PRIMARY KEY,
+        theme_id INTEGER REFERENCES themes(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        alt_text VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_theme_images_theme ON theme_images(theme_id);
+    `);
+
+    // Insérer les thèmes par défaut s'ils n'existent pas
+    await pool.query(`
+      INSERT INTO themes (name, description) VALUES 
+        ('fantastique', 'Mondes magiques et créatures mythiques'),
+        ('science-fiction', 'Futur, espace et technologies'),
+        ('horreur', 'Frissons et épouvante'),
+        ('aventure', 'Exploration et action'),
+        ('romance', 'Amour et relations'),
+        ('mystère', 'Enquêtes et suspense')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+
     logger.info("✅ Tables PostgreSQL initialisées avec succès");
   } catch (err) {
     logger.error(`Erreur lors de l'initialisation des tables : ${err.message}`);

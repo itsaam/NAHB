@@ -1,18 +1,32 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { storiesAPI } from "../services/api";
+import { storiesAPI, themesAPI } from "../services/api";
 import { Search, BookOpen, Star } from "lucide-react";
 
 export default function StoriesPage() {
   const [stories, setStories] = useState([]);
+  const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState("");
 
   useEffect(() => {
+    loadThemes();
+  }, []);
+
+  useEffect(() => {
     loadStories();
   }, [search, theme]);
+
+  const loadThemes = async () => {
+    try {
+      const response = await themesAPI.getAll();
+      setThemes(response.data.data || []);
+    } catch (err) {
+      console.error("Erreur chargement thèmes:", err);
+    }
+  };
 
   const loadStories = async () => {
     try {
@@ -62,12 +76,11 @@ export default function StoriesPage() {
               className="flex h-10 w-full sm:w-[200px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">Tous les thèmes</option>
-              <option value="fantastique">Fantastique</option>
-              <option value="science-fiction">Science-Fiction</option>
-              <option value="horreur">Horreur</option>
-              <option value="aventure">Aventure</option>
-              <option value="romance">Romance</option>
-              <option value="mystère">Mystère</option>
+              {themes.map((t) => (
+                <option key={t.id} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
             </select>
           </div>
 
