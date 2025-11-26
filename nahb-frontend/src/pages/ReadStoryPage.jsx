@@ -380,64 +380,103 @@ export default function ReadStoryPage() {
           </div>
         )}
 
-        {/* Modal Jet de dé */}
+        {/* Modal Jet de dé - Design moderne et sobre */}
         {showDiceModal && pendingChoice && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-2xl">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900">
-                🎲 Jet de dé !
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Tu dois faire{" "}
-                <span className="font-bold text-orange-600">
-                  {pendingChoice.diceThreshold}
-                </span>{" "}
-                ou plus
-              </p>
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 border border-zinc-700 rounded-xl max-w-sm w-full p-6 shadow-2xl">
+              {/* Header */}
+              <div className="text-center mb-6">
+                <p className="text-zinc-400 text-sm uppercase tracking-widest mb-1">
+                  Test de compétence
+                </p>
+                <p className="text-white text-lg">
+                  Objectif :{" "}
+                  <span className="font-mono font-bold text-xl">
+                    {pendingChoice.diceThreshold}
+                  </span>
+                  <span className="text-zinc-500 text-sm ml-1">/ 20</span>
+                </p>
+              </div>
 
               {/* Zone du dé */}
-              <div className="mb-6">
-                {diceResult === null ? (
-                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
-                    <span className="text-6xl">🎲</span>
-                  </div>
-                ) : (
-                  <div
-                    className={`w-32 h-32 mx-auto rounded-2xl flex items-center justify-center shadow-lg ${
-                      isRolling
-                        ? "animate-bounce bg-gradient-to-br from-orange-400 to-red-500"
-                        : diceResult >= pendingChoice.diceThreshold
-                        ? "bg-gradient-to-br from-green-400 to-green-600"
-                        : "bg-gradient-to-br from-red-400 to-red-600"
+              <div className="flex justify-center mb-6">
+                <div
+                  className={`w-24 h-24 rounded-lg flex items-center justify-center border-2 transition-all duration-200 ${
+                    diceResult === null
+                      ? "bg-zinc-800 border-zinc-600"
+                      : isRolling
+                      ? "bg-zinc-800 border-zinc-500 animate-pulse"
+                      : diceResult >= pendingChoice.diceThreshold
+                      ? "bg-emerald-900/50 border-emerald-500"
+                      : "bg-red-900/50 border-red-500"
+                  }`}
+                >
+                  <span
+                    className={`font-mono font-bold transition-all ${
+                      diceResult === null
+                        ? "text-4xl text-zinc-600"
+                        : "text-5xl text-white"
                     }`}
                   >
-                    <span className="text-5xl font-bold text-white">
-                      {diceResult}
-                    </span>
+                    {diceResult === null ? "?" : diceResult}
+                  </span>
+                </div>
+              </div>
+
+              {/* Barre de progression visuelle */}
+              <div className="mb-6">
+                <div className="flex justify-between text-xs text-zinc-500 mb-1">
+                  <span>1</span>
+                  <span>20</span>
+                </div>
+                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-zinc-600 rounded-full relative"
+                    style={{
+                      width: `${
+                        ((pendingChoice.diceThreshold - 1) / 19) * 100
+                      }%`,
+                    }}
+                  >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-zinc-400"></div>
                   </div>
-                )}
+                  {diceResult !== null && !isRolling && (
+                    <div
+                      className={`h-full rounded-full -mt-2 transition-all duration-500 ${
+                        diceResult >= pendingChoice.diceThreshold
+                          ? "bg-emerald-500"
+                          : "bg-red-500"
+                      }`}
+                      style={{ width: `${(diceResult / 20) * 100}%` }}
+                    ></div>
+                  )}
+                </div>
               </div>
 
               {/* Résultat */}
               {diceResult !== null && !isRolling && (
                 <div
-                  className={`mb-6 p-4 rounded-lg ${
+                  className={`text-center mb-6 py-3 rounded-lg ${
                     diceResult >= pendingChoice.diceThreshold
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
+                      ? "bg-emerald-500/10 border border-emerald-500/30"
+                      : "bg-red-500/10 border border-red-500/30"
                   }`}
                 >
-                  <p className="text-xl font-bold">
+                  <p
+                    className={`font-semibold ${
+                      diceResult >= pendingChoice.diceThreshold
+                        ? "text-emerald-400"
+                        : "text-red-400"
+                    }`}
+                  >
                     {diceResult >= pendingChoice.diceThreshold
-                      ? "✅ SUCCÈS !"
-                      : "❌ ÉCHEC..."}
+                      ? "Réussite"
+                      : "Échec"}
                   </p>
-                  <p className="text-sm mt-1">
+                  <p className="text-zinc-500 text-sm mt-1">
                     {diceResult >= pendingChoice.diceThreshold
-                      ? "Tu as réussi ton jet !"
-                      : pendingChoice.failurePageId
-                      ? "Les choses ne se passent pas comme prévu..."
-                      : "Tu peux réessayer ou choisir une autre action."}
+                      ? `${diceResult} ≥ ${pendingChoice.diceThreshold}`
+                      : `${diceResult} < ${pendingChoice.diceThreshold}`}
                   </p>
                 </div>
               )}
@@ -451,16 +490,16 @@ export default function ReadStoryPage() {
                         setShowDiceModal(false);
                         setPendingChoice(null);
                       }}
-                      className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+                      className="flex-1 bg-zinc-800 text-zinc-400 font-medium py-3 px-4 rounded-lg hover:bg-zinc-700 hover:text-zinc-300 transition-colors border border-zinc-700"
                     >
                       Annuler
                     </button>
                     <button
                       onClick={rollDice}
                       disabled={isRolling}
-                      className="flex-1 bg-orange-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-1 bg-white text-zinc-900 font-semibold py-3 px-4 rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50"
                     >
-                      {isRolling ? "🎲 ..." : "🎲 Lancer le dé !"}
+                      {isRolling ? "..." : "Lancer"}
                     </button>
                   </>
                 ) : (
@@ -469,20 +508,20 @@ export default function ReadStoryPage() {
                       !pendingChoice.failurePageId && (
                         <button
                           onClick={() => setDiceResult(null)}
-                          className="flex-1 bg-orange-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-orange-600 transition-colors"
+                          className="flex-1 bg-zinc-800 text-zinc-300 font-medium py-3 px-4 rounded-lg hover:bg-zinc-700 transition-colors border border-zinc-700"
                         >
-                          🎲 Relancer
+                          Relancer
                         </button>
                       )}
                     <button
                       onClick={handleDiceResult}
-                      className={`flex-1 font-semibold py-3 px-6 rounded-lg transition-colors ${
+                      className={`flex-1 font-semibold py-3 px-4 rounded-lg transition-colors ${
                         diceResult >= pendingChoice.diceThreshold
-                          ? "bg-green-500 text-white hover:bg-green-600"
-                          : "bg-gray-500 text-white hover:bg-gray-600"
+                          ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                          : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
                       }`}
                     >
-                      Continuer →
+                      Continuer
                     </button>
                   </>
                 )}
