@@ -132,7 +132,7 @@ export default function RegisterPage() {
           bottom: 0,
           justifyContent: "center",
           minHeight: "100vh",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#edf2f8",
           overflow: "auto",
         }}
       >
