@@ -322,12 +322,22 @@ const addChoice = async (req, res) => {
     }
 
     // Ajouter le choix
+    const { diceRequired, diceThreshold, failurePageId } = req.body;
+
+    logger.info(
+      `Données dés reçues: diceRequired=${diceRequired}, threshold=${diceThreshold}, failurePageId=${failurePageId}`
+    );
+
     const newChoice = {
       text,
       targetPageId,
       order: order !== undefined ? order : page.choices.length,
-      diceRequirement: diceRequirement || null,
+      diceRequired: diceRequired === true || diceRequired === "true",
+      diceThreshold: diceThreshold ? parseInt(diceThreshold, 10) : 10,
+      failurePageId: failurePageId || null,
     };
+
+    logger.info(`Choix créé: ${JSON.stringify(newChoice)}`);
 
     page.choices.push(newChoice);
     await page.save();

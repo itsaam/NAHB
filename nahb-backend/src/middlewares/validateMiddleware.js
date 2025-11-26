@@ -183,7 +183,16 @@ const addChoiceSchema = Joi.object({
 
   order: Joi.number().integer().min(0).default(0),
 
-  diceRequirement: Joi.number().integer().min(1).max(20).allow(null),
+  // Système de dés (niveau 18/20)
+  diceRequired: Joi.boolean().default(false),
+  diceThreshold: Joi.number().integer().min(1).max(20).default(10),
+  failurePageId: Joi.string()
+    .regex(/^[0-9a-fA-F]{24}$/)
+    .allow(null, "")
+    .messages({
+      "string.pattern.base":
+        "L'ID de la page d'échec doit être un ObjectId MongoDB valide",
+    }),
 });
 
 // Reviews

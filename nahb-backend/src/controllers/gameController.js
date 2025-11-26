@@ -609,9 +609,7 @@ const getMyActivities = async (req, res) => {
 
     // Construire la réponse
     const activities = Object.values(storiesMap).map((activity) => {
-      const story = stories.find(
-        (s) => s._id.toString() === activity.storyId
-      );
+      const story = stories.find((s) => s._id.toString() === activity.storyId);
 
       return {
         story: {
@@ -644,6 +642,125 @@ const getMyActivities = async (req, res) => {
   }
 };
 
+/**
+ * Naviguer directement vers une page (utilisé pour les échecs de jet de dé)
+ */
+const navigateToPage = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { targetPageId } = req.body;
+
+    logger.info(
+      `Navigation directe vers la page ${targetPageId} dans la session ${sessionId}`
+    );
+
+    const sessionResult = await pool.query(
+      "SELECT * FROM game_sessions WHERE id = $1",
+      [sessionId]
+    );
+
+    if (sessionResult.rows.length === 0) {
+      logger.warn(`Session introuvable : ${sessionId}`);
+      return res.status(404).json({
+        success: false,
+        error: "Session de jeu introuvable.",
+      });
+    }
+
+    const session = sessionResult.rows[0];
+
+    if (session.is_completed) {
+      logger.warn(
+        `Tentative de navigation sur une session terminée : ${sessionId}`
+      );
+      return res.status(400).json({
+        success: false,
+        error: "Cette partie est déjà terminée.",
+      });
+    }
+
+    const targetPage = await Page.findById(targetPageId);
+
+    if (!targetPage) {
+      logger.error(`Page cible introuvable : ${targetPageId}`);
+      return res.status(404).json({
+        success: false,
+        error: "Page cible introuvable.",
+      });
+    }
+
+    // Vérifier que la page appartient à la même histoire
+    if (targetPage.storyId.toString() !== session.story_mongo_id) {
+      logger.warn(
+        `Page ${targetPageId} n'appartient pas à l'histoire ${session.story_mongo_id}`
+      );
+      return res.status(400).json({
+        success: false,
+        error: "La page cible n'appartient pas à cette histoire.",
+      });
+    }
+
+    let isCompleted = targetPage.isEnd;
+    let endPageMongoId = isCompleted ? targetPage._id.toString() : null;
+
+    await pool.query(
+      `UPDATE game_sessions 
+       SET current_page_mongo_id = $1, 
+           is_completed = $2, 
+           end_page_mongo_id = $3,
+           completed_at = $4,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5`,
+      [
+        targetPage._id.toString(),
+        isCompleted,
+        endPageMongoId,
+        isCompleted ? new Date() : null,
+        sessionId,
+      ]
+    );
+
+    targetPage.stats.timesReached += 1;
+    if (targetPage.isEnd) {
+      targetPage.stats.timesCompleted += 1;
+
+      await Story.findByIdAndUpdate(targetPage.storyId, {
+        $inc: { "stats.totalCompletions": 1 },
+      });
+
+      if (req.user) {
+        await pool.query(
+          `INSERT INTO unlocked_endings (user_id, story_mongo_id, page_mongo_id)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (user_id, story_mongo_id, page_mongo_id) DO NOTHING`,
+          [
+            req.user.id,
+            targetPage.storyId.toString(),
+            targetPage._id.toString(),
+          ]
+        );
+      }
+    }
+    await targetPage.save();
+
+    logger.info(`Navigation directe effectuée vers ${targetPage._id}`);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        currentPage: targetPage,
+        isCompleted,
+      },
+    });
+  } catch (err) {
+    logger.error(`Erreur lors de la navigation directe : ${err.message}`);
+    return res.status(500).json({
+      success: false,
+      error: "Erreur serveur lors de la navigation.",
+    });
+  }
+};
+
 module.exports = {
   startGame,
   makeChoice,
@@ -652,4 +769,5 @@ module.exports = {
   getUnlockedEndings,
   getPathStats,
   getMyActivities,
+  navigateToPage,
 };

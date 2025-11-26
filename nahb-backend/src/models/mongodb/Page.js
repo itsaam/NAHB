@@ -22,10 +22,19 @@ const choiceSchema = new mongoose.Schema(
     },
 
     // Pour niveau 18/20 (système de dés)
-    diceRequirement: {
+    diceRequired: {
+      type: Boolean,
+      default: false,
+    },
+    diceThreshold: {
       type: Number,
       min: 1,
       max: 20,
+      default: 10,
+    },
+    failurePageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Page",
     },
   },
   { _id: true }

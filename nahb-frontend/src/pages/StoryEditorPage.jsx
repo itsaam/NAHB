@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { storiesAPI, pagesAPI } from "../services/api";
-import { Plus, Pencil, Trash2, X, Flag } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Flag, Dice6, Play } from "lucide-react";
 
 export default function StoryEditorPage() {
   const { storyId } = useParams();
@@ -26,6 +26,9 @@ export default function StoryEditorPage() {
   const [choiceForm, setChoiceForm] = useState({
     text: "",
     targetPageId: "",
+    diceRequired: false,
+    diceThreshold: 10,
+    failurePageId: "",
   });
 
   useEffect(() => {
@@ -110,7 +113,13 @@ export default function StoryEditorPage() {
     try {
       await pagesAPI.addChoice(selectedPage._id, choiceForm);
       setShowAddChoiceModal(false);
-      setChoiceForm({ text: "", targetPageId: "" });
+      setChoiceForm({
+        text: "",
+        targetPageId: "",
+        diceRequired: false,
+        diceThreshold: 10,
+        failurePageId: "",
+      });
       loadStoryAndPages();
       alert("✅ Choix ajouté !");
     } catch (err) {
@@ -143,6 +152,17 @@ export default function StoryEditorPage() {
   const openAddChoice = (page) => {
     setSelectedPage(page);
     setShowAddChoiceModal(true);
+  };
+
+  // Définir la page de départ
+  const handleSetStartPage = async (pageId) => {
+    try {
+      await storiesAPI.update(storyId, { startPageId: pageId });
+      loadStoryAndPages();
+      alert("✅ Page de départ définie !");
+    } catch (err) {
+      alert("❌ " + (err.response?.data?.error || "Erreur"));
+    }
   };
 
   if (loading) {
@@ -179,7 +199,9 @@ export default function StoryEditorPage() {
           {pages.map((page) => (
             <div
               key={page._id}
-              className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex flex-col"
+              className={`bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex flex-col ${
+                story?.startPageId === page._id ? "ring-2 ring-indigo-500" : ""
+              }`}
             >
               <div className="p-6 flex flex-col flex-1">
                 <div className="flex items-start justify-between mb-4 gap-2">
@@ -187,18 +209,26 @@ export default function StoryEditorPage() {
                     <p className="text-sm text-gray-500 mb-2">
                       ID: {page._id.substring(0, 8)}...
                     </p>
-                    {page.isEnd && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded max-w-full overflow-hidden">
-                        <Flag size={14} className="flex-shrink-0" />
-                        <span className="truncate">
-                          Fin: {page.endLabel || "Fin"}
+                    <div className="flex flex-wrap gap-1">
+                      {story?.startPageId === page._id && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded">
+                          <Play size={12} fill="currentColor" />
+                          Départ
                         </span>
-                      </span>
-                    )}
+                      )}
+                      {page.isEnd && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded max-w-full overflow-hidden">
+                          <Flag size={14} className="shrink-0" />
+                          <span className="truncate">
+                            Fin: {page.endLabel || "Fin"}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => handleDeletePage(page._id)}
-                    className="text-red-600 hover:text-red-800 flex-shrink-0"
+                    className="text-red-600 hover:text-red-800 shrink-0"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -226,7 +256,15 @@ export default function StoryEditorPage() {
                       key={choice._id}
                       className="flex items-center justify-between bg-gray-50 p-2 rounded mb-2"
                     >
-                      <span className="text-sm text-gray-700 flex-1">
+                      <span className="text-sm text-gray-700 flex-1 flex items-center gap-2">
+                        {choice.diceRequired && (
+                          <span
+                            className="text-orange-500"
+                            title={`Dé requis: ${choice.diceThreshold}+`}
+                          >
+                            <Dice6 size={14} />
+                          </span>
+                        )}
                         {choice.text}
                       </span>
                       <button
@@ -255,6 +293,15 @@ export default function StoryEditorPage() {
                   >
                     <Pencil size={16} /> Modifier
                   </button>
+                  {story?.startPageId !== page._id && !page.isEnd && (
+                    <button
+                      onClick={() => handleSetStartPage(page._id)}
+                      className="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded hover:bg-indigo-200 flex items-center justify-center gap-2"
+                      title="Définir comme page de départ"
+                    >
+                      <Play size={16} /> Départ
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -483,7 +530,7 @@ export default function StoryEditorPage() {
         {/* Modal: Ajouter un choix */}
         {showAddChoiceModal && selectedPage && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-lg w-full">
+            <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <h2 className="text-2xl font-bold mb-4">Ajouter un choix</h2>
                 <form onSubmit={handleAddChoice}>
@@ -506,7 +553,7 @@ export default function StoryEditorPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Page de destination *
+                        Page de destination (succès) *
                       </label>
                       <select
                         required
@@ -529,6 +576,82 @@ export default function StoryEditorPage() {
                             </option>
                           ))}
                       </select>
+                    </div>
+
+                    {/* Section Jet de dé */}
+                    <div className="border-t pt-4">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={choiceForm.diceRequired}
+                          onChange={(e) =>
+                            setChoiceForm({
+                              ...choiceForm,
+                              diceRequired: e.target.checked,
+                            })
+                          }
+                          className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <Dice6 size={20} className="text-orange-500" />
+                          Ajouter un jet de dé
+                        </span>
+                      </label>
+
+                      {choiceForm.diceRequired && (
+                        <div className="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200 space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              🎲 Valeur minimum pour réussir (1-20)
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              value={choiceForm.diceThreshold}
+                              onChange={(e) =>
+                                setChoiceForm({
+                                  ...choiceForm,
+                                  diceThreshold: parseInt(e.target.value) || 10,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Le joueur devra faire {choiceForm.diceThreshold}{" "}
+                              ou plus sur un dé 20
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              ❌ Page en cas d'échec
+                            </label>
+                            <select
+                              value={choiceForm.failurePageId}
+                              onChange={(e) =>
+                                setChoiceForm({
+                                  ...choiceForm,
+                                  failurePageId: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            >
+                              <option value="">
+                                -- Rester sur la page actuelle --
+                              </option>
+                              {pages
+                                .filter((p) => p._id !== selectedPage._id)
+                                .map((p) => (
+                                  <option key={p._id} value={p._id}>
+                                    {p.content.substring(0, 50)}...{" "}
+                                    {p.isEnd ? "(FIN)" : ""}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
