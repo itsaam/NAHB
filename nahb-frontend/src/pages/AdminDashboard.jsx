@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { adminAPI } from "../services/api";
-import { Users, BookOpen, PlayCircle, Star, Flag, Ban } from "lucide-react";
+import { Users, BookOpen, PlayCircle, Star, Flag, Ban, PenOff, MessageSquareOff } from "lucide-react";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -31,24 +32,34 @@ export default function AdminDashboard() {
         setReports(response.data.data);
       }
     } catch (err) {
-      alert("Erreur lors du chargement");
+      toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBanUser = async (userId, isBanned) => {
+  const handleBanUser = async (userId, banType, reason = "") => {
     try {
-      if (isBanned) {
-        await adminAPI.unbanUser(userId);
-        alert("Utilisateur débanni");
-      } else {
-        await adminAPI.banUser(userId);
-        alert("Utilisateur banni");
-      }
+      await adminAPI.banUser(userId, banType, reason);
+      const banLabels = {
+        full: "complètement banni",
+        author: "interdit de créer des histoires",
+        comment: "interdit de commenter",
+      };
+      toast.success(`Utilisateur ${banLabels[banType]}`);
       loadData();
     } catch (err) {
-      alert(err.response?.data?.error || "Erreur");
+      toast.error(err.response?.data?.error || "Erreur lors du bannissement");
+    }
+  };
+
+  const handleUnbanUser = async (userId) => {
+    try {
+      await adminAPI.unbanUser(userId);
+      toast.success("Utilisateur débanni");
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erreur lors du débannissement");
     }
   };
 
@@ -56,24 +67,28 @@ export default function AdminDashboard() {
     try {
       if (isSuspended) {
         await adminAPI.unsuspendStory(storyId);
-        alert("Histoire réactivée");
+        toast.success("Histoire réactivée");
       } else {
         await adminAPI.suspendStory(storyId);
-        alert("Histoire suspendue");
+        toast.success("Histoire suspendue");
       }
       loadData();
     } catch (err) {
-      alert(err.response?.data?.error || "Erreur");
+      toast.error(err.response?.data?.error || "Erreur");
     }
   };
 
   const handleResolveReport = async (reportId, action) => {
     try {
-      await adminAPI.handleReport(reportId, action);
-      alert(`Signalement ${action === "resolved" ? "résolu" : "rejeté"}`);
+      const response = await adminAPI.handleReport(reportId, action);
+      if (response.data.data.storySuspended) {
+        toast.warning("Signalement traité - Histoire suspendue automatiquement (5+ signalements)");
+      } else {
+        toast.success(`Signalement ${action === "resolved" ? "accepté" : "rejeté"}`);
+      }
       loadData();
     } catch (err) {
-      alert(err.response?.data?.error || "Erreur");
+      toast.error(err.response?.data?.error || "Erreur");
     }
   };
 
@@ -265,21 +280,56 @@ export default function AdminDashboard() {
                                         : "bg-primary/10 text-primary"
                                     }`}
                                   >
-                                    {user.is_banned ? "Banni" : "Actif"}
+                                    {user.is_banned 
+                                      ? user.ban_type === "full" 
+                                        ? "Banni" 
+                                        : user.ban_type === "author"
+                                          ? "Ban Auteur"
+                                          : "Ban Commentaire"
+                                      : "Actif"}
                                   </span>
                                 </td>
                                 <td className="p-4 align-middle">
                                   {user.role !== "admin" && (
-                                    <button
-                                      onClick={() =>
-                                        handleBanUser(user.id, user.is_banned)
-                                      }
-                                      className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium h-9 rounded-md px-3 border border-input bg-background transition-colors hover:bg-accent hover:text-accent-foreground ${
-                                        user.is_banned ? "" : "text-destructive"
-                                      }`}
-                                    >
-                                      {user.is_banned ? "Débannir" : "Bannir"}
-                                    </button>
+                                    <div className="flex gap-2 flex-wrap">
+                                      {user.is_banned ? (
+                                        <button
+                                          onClick={() => handleUnbanUser(user.id)}
+                                          className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium h-9 rounded-md px-3 border border-input bg-background transition-colors hover:bg-accent hover:text-accent-foreground"
+                                        >
+                                          Débannir
+                                        </button>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={() => handleBanUser(user.id, "full")}
+                                            className="inline-flex items-center gap-1 justify-center whitespace-nowrap text-xs font-medium h-8 rounded-md px-2 border border-destructive text-destructive bg-background transition-colors hover:bg-destructive hover:text-white"
+                                            title="Ban complet"
+                                          >
+                                            <Ban className="h-3 w-3" />
+                                            Ban
+                                          </button>
+                                          {user.role === "auteur" && (
+                                            <button
+                                              onClick={() => handleBanUser(user.id, "author")}
+                                              className="inline-flex items-center gap-1 justify-center whitespace-nowrap text-xs font-medium h-8 rounded-md px-2 border border-orange-500 text-orange-500 bg-background transition-colors hover:bg-orange-500 hover:text-white"
+                                              title="Interdit de créer des histoires"
+                                            >
+                                              <PenOff className="h-3 w-3" />
+                                              Auteur
+                                            </button>
+                                          )}
+                                          <button
+                                            onClick={() => handleBanUser(user.id, "comment")}
+                                            className="inline-flex items-center gap-1 justify-center whitespace-nowrap text-xs font-medium h-8 rounded-md px-2 border border-yellow-500 text-yellow-500 bg-background transition-colors hover:bg-yellow-500 hover:text-white"
+                                            title="Interdit de commenter"
+                                          >
+                                            <MessageSquareOff className="h-3 w-3" />
+                                            Commentaire
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
                                   )}
                                 </td>
                               </tr>

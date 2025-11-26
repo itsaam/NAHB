@@ -7,6 +7,9 @@ import {
 } from "react-router-dom";
 import {AuthProvider} from "./context/AuthContext";
 import {ProtectedRoute} from "./utils/ProtectedRoute";
+import { Toaster } from "sonner";
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./utils/ProtectedRoute";
 import Navbar from "./components/Navbar";
 
 // Pages
@@ -119,6 +122,21 @@ function App() {
             </AuthProvider>
         </BrowserRouter>
     );
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{
+            duration: 5000,
+          }}
+        />
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
 export default App;

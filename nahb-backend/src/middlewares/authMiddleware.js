@@ -26,7 +26,7 @@ const authenticate = async (req, res, next) => {
 
     // Récupérer l'utilisateur depuis PostgreSQL
     const result = await pool.query(
-      "SELECT id, pseudo, email, role, is_banned FROM users WHERE id = $1",
+      "SELECT id, pseudo, email, role, is_banned, ban_type, ban_reason FROM users WHERE id = $1",
       [decoded.userId]
     );
 
@@ -42,12 +42,14 @@ const authenticate = async (req, res, next) => {
 
     const user = result.rows[0];
 
-    // Vérifier si l'utilisateur est banni
-    if (user.is_banned) {
-      logger.warn(`Utilisateur banni ${user.id} a tenté de se connecter`);
+    // Vérifier si l'utilisateur est complètement banni (ban_type = 'full')
+    if (user.is_banned && user.ban_type === "full") {
+      logger.warn(`Utilisateur banni (full) ${user.id} a tenté de se connecter`);
       return res.status(403).json({
         success: false,
         error: "Votre compte a été banni par un administrateur.",
+        banType: "full",
+        banReason: user.ban_reason,
       });
     }
 
@@ -184,4 +186,70 @@ const requireAuthor = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, optionalAuth, requireAdmin, requireAuthor };
+/**
+ * Middleware pour vérifier si l'utilisateur peut créer/modifier des histoires
+ * Bloque si ban_type = 'author' ou 'full'
+ */
+const canCreateStory = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentification requise.",
+      });
+    }
+
+    if (req.user.is_banned && (req.user.ban_type === "author" || req.user.ban_type === "full")) {
+      logger.warn(`Utilisateur banni (${req.user.ban_type}) ${req.user.id} a tenté de créer une histoire`);
+      return res.status(403).json({
+        success: false,
+        error: "Vous n'êtes plus autorisé à créer ou modifier des histoires.",
+        banType: req.user.ban_type,
+        banReason: req.user.ban_reason,
+      });
+    }
+
+    next();
+  } catch (err) {
+    logger.error(`Erreur middleware canCreateStory : ${err.message}`);
+    return res.status(500).json({
+      success: false,
+      error: "Erreur serveur lors de la vérification des droits.",
+    });
+  }
+};
+
+/**
+ * Middleware pour vérifier si l'utilisateur peut commenter
+ * Bloque si ban_type = 'comment' ou 'full'
+ */
+const canComment = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentification requise.",
+      });
+    }
+
+    if (req.user.is_banned && (req.user.ban_type === "comment" || req.user.ban_type === "full")) {
+      logger.warn(`Utilisateur banni (${req.user.ban_type}) ${req.user.id} a tenté de commenter`);
+      return res.status(403).json({
+        success: false,
+        error: "Vous n'êtes plus autorisé à poster des commentaires.",
+        banType: req.user.ban_type,
+        banReason: req.user.ban_reason,
+      });
+    }
+
+    next();
+  } catch (err) {
+    logger.error(`Erreur middleware canComment : ${err.message}`);
+    return res.status(500).json({
+      success: false,
+      error: "Erreur serveur lors de la vérification des droits.",
+    });
+  }
+};
+
+module.exports = { authenticate, optionalAuth, requireAdmin, requireAuthor, canCreateStory, canComment };

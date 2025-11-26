@@ -2,15 +2,28 @@ const { pool } = require("../config/postgresql");
 const Story = require("../models/mongodb/Story");
 const logger = require("../utils/logger");
 
+// Nombre de signalements acceptés pour suspension auto
+const REPORTS_THRESHOLD = 5;
+
 /**
- * Bannir un auteur (niveau 10/20)
+ * Bannir un utilisateur avec type de ban
+ * Types: 'full' (complet), 'author' (ne peut plus créer), 'comment' (ne peut plus commenter)
  */
 const banUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const { banType = "full", reason } = req.body;
     const adminId = req.user.id;
 
-    logger.info(`Admin ${adminId} bannit l'utilisateur ${userId}`);
+    // Valider le type de ban
+    if (!["full", "author", "comment"].includes(banType)) {
+      return res.status(400).json({
+        success: false,
+        error: "Type de ban invalide. Utilisez: full, author, ou comment.",
+      });
+    }
+
+    logger.info(`Admin ${adminId} bannit l'utilisateur ${userId} (type: ${banType})`);
 
     // Vérifier que l'utilisateur existe
     const userCheck = await pool.query(
@@ -39,16 +52,30 @@ const banUser = async (req, res) => {
 
     // Bannir l'utilisateur
     await pool.query(
-      "UPDATE users SET is_banned = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
-      [userId]
+      `UPDATE users SET 
+        is_banned = TRUE, 
+        ban_type = $1, 
+        ban_reason = $2, 
+        banned_at = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP 
+      WHERE id = $3`,
+      [banType, reason || null, userId]
     );
 
-    logger.info(`Utilisateur ${userId} (${user.pseudo}) banni avec succès`);
+    const banTypeLabels = {
+      full: "complètement banni",
+      author: "interdit de créer des histoires",
+      comment: "interdit de commenter",
+    };
+
+    logger.info(`Utilisateur ${userId} (${user.pseudo}) ${banTypeLabels[banType]}`);
 
     return res.status(200).json({
       success: true,
       data: {
-        message: `L'utilisateur ${user.pseudo} a été banni avec succès.`,
+        message: `L'utilisateur ${user.pseudo} a été ${banTypeLabels[banType]}.`,
+        banType,
+        reason,
       },
     });
   } catch (err) {
@@ -86,9 +113,15 @@ const unbanUser = async (req, res) => {
 
     const user = userCheck.rows[0];
 
-    // Débannir l'utilisateur
+    // Débannir l'utilisateur (reset tous les champs de ban)
     await pool.query(
-      "UPDATE users SET is_banned = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+      `UPDATE users SET 
+        is_banned = FALSE, 
+        ban_type = NULL, 
+        ban_reason = NULL, 
+        banned_at = NULL,
+        updated_at = CURRENT_TIMESTAMP 
+      WHERE id = $1`,
       [userId]
     );
 
@@ -293,7 +326,7 @@ const getAllUsers = async (req, res) => {
     logger.info("Récupération de tous les utilisateurs");
 
     const result = await pool.query(`
-      SELECT id, pseudo, email, role, is_banned, created_at 
+      SELECT id, pseudo, email, role, is_banned, ban_type, ban_reason, banned_at, created_at 
       FROM users 
       ORDER BY created_at DESC
     `);
@@ -385,7 +418,7 @@ const getAllReports = async (req, res) => {
 };
 
 /**
- * Traiter un signalement
+ * Traiter un signalement (avec suspension auto si 5 signalements acceptés)
  */
 const handleReport = async (req, res) => {
   try {
@@ -401,12 +434,13 @@ const handleReport = async (req, res) => {
 
     logger.info(`Traitement du signalement ${reportId} : ${status}`);
 
-    const result = await pool.query(
-      "UPDATE reports SET status = $1 WHERE id = $2 RETURNING *",
-      [status, reportId]
+    // Récupérer le signalement
+    const reportResult = await pool.query(
+      "SELECT * FROM reports WHERE id = $1",
+      [reportId]
     );
 
-    if (result.rows.length === 0) {
+    if (reportResult.rows.length === 0) {
       logger.warn(`Signalement introuvable : ${reportId}`);
       return res.status(404).json({
         success: false,
@@ -414,11 +448,53 @@ const handleReport = async (req, res) => {
       });
     }
 
+    const report = reportResult.rows[0];
+
+    // Mettre à jour le signalement
+    await pool.query(
+      "UPDATE reports SET status = $1 WHERE id = $2",
+      [status, reportId]
+    );
+
+    let storySuspended = false;
+
+    // Si le signalement est accepté, vérifier le nombre de signalements acceptés pour cette histoire
+    if (status === "resolved") {
+      const countResult = await pool.query(
+        "SELECT COUNT(*) as count FROM reports WHERE story_mongo_id = $1 AND status = 'resolved'",
+        [report.story_mongo_id]
+      );
+
+      const resolvedCount = parseInt(countResult.rows[0].count);
+      logger.info(`Histoire ${report.story_mongo_id} : ${resolvedCount} signalements acceptés`);
+
+      // Si >= 5 signalements acceptés, suspendre automatiquement l'histoire
+      if (resolvedCount >= REPORTS_THRESHOLD) {
+        const story = await Story.findById(report.story_mongo_id);
+        
+        if (story && !story.isSuspended) {
+          story.isSuspended = true;
+          story.suspendedReason = `Suspension automatique : ${resolvedCount} signalements acceptés`;
+          await story.save();
+          
+          storySuspended = true;
+          logger.info(`Histoire ${report.story_mongo_id} suspendue automatiquement (${resolvedCount} signalements)`);
+        }
+      }
+    }
+
     logger.info(`Signalement ${reportId} traité avec succès`);
 
     return res.status(200).json({
       success: true,
-      data: result.rows[0],
+      data: {
+        ...report,
+        status,
+        storySuspended,
+        message: storySuspended 
+          ? "Signalement traité. L'histoire a été automatiquement suspendue (5+ signalements acceptés)."
+          : "Signalement traité avec succès.",
+      },
     });
   } catch (err) {
     logger.error(`Erreur lors du traitement du signalement : ${err.message}`);
