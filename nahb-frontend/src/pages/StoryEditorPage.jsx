@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { storiesAPI, pagesAPI } from "../services/api";
-import { Plus, Pencil, Trash2, X, Flag, Dice6, Play, GitBranch, List } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  Flag,
+  Dice6,
+  Play,
+  GitBranch,
+  List,
+} from "lucide-react";
 import StoryTree from "../components/StoryTree";
 
 export default function StoryEditorPage() {
@@ -240,7 +250,7 @@ export default function StoryEditorPage() {
                 setShowEditPageModal(true);
               }}
             />
-            
+
             {/* Légende */}
             <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
               <div className="flex items-center gap-2">
@@ -265,124 +275,128 @@ export default function StoryEditorPage() {
 
         {/* Pages List */}
         {viewMode === "list" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pages.map((page) => (
-            <div
-              key={page._id}
-              className={`bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex flex-col ${
-                story?.startPageId === page._id ? "ring-2 ring-indigo-500" : ""
-              }`}
-            >
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-4 gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-500 mb-2">
-                      ID: {page._id.substring(0, 8)}...
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {story?.startPageId === page._id && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded">
-                          <Play size={12} fill="currentColor" />
-                          Départ
-                        </span>
-                      )}
-                      {page.isEnd && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded max-w-full overflow-hidden">
-                          <Flag size={14} className="shrink-0" />
-                          <span className="truncate">
-                            Fin: {page.endLabel || "Fin"}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeletePage(page._id)}
-                    className="text-red-600 hover:text-red-800 shrink-0"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-
-                <p className="text-gray-700 mb-4 line-clamp-3">
-                  {page.content}
-                </p>
-
-                {page.illustration && (
-                  <img
-                    src={page.illustration}
-                    alt="Illustration"
-                    className="w-full h-32 object-cover rounded mb-4"
-                  />
-                )}
-
-                {/* Choix */}
-                <div className="border-t pt-4 flex-1">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
-                    Choix ({page.choices?.length || 0}) :
-                  </p>
-                  {page.choices?.map((choice) => (
-                    <div
-                      key={choice._id}
-                      className="flex items-center justify-between bg-gray-50 p-2 rounded mb-2"
-                    >
-                      <span className="text-sm text-gray-700 flex-1 flex items-center gap-2">
-                        {choice.diceRequired && (
-                          <span
-                            className="text-orange-500"
-                            title={`Dé requis: ${choice.diceThreshold}+`}
-                          >
-                            <Dice6 size={14} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pages.map((page) => (
+              <div
+                key={page._id}
+                className={`bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex flex-col ${
+                  story?.startPageId === page._id
+                    ? "ring-2 ring-indigo-500"
+                    : ""
+                }`}
+              >
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-start justify-between mb-4 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-500 mb-2">
+                        ID: {page._id.substring(0, 8)}...
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {story?.startPageId === page._id && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded">
+                            <Play size={12} fill="currentColor" />
+                            Départ
                           </span>
                         )}
-                        {choice.text}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteChoice(page._id, choice._id)}
-                        className="text-red-500 hover:text-red-700 ml-2"
-                      >
-                        <X size={16} />
-                      </button>
+                        {page.isEnd && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded max-w-full overflow-hidden">
+                            <Flag size={14} className="shrink-0" />
+                            <span className="truncate">
+                              Fin: {page.endLabel || "Fin"}
+                            </span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                  {!page.isEnd && (
                     <button
-                      onClick={() => openAddChoice(page)}
-                      className="text-sm text-indigo-600 hover:text-indigo-800 mt-2 flex items-center gap-1"
+                      onClick={() => handleDeletePage(page._id)}
+                      className="text-red-600 hover:text-red-800 shrink-0"
                     >
-                      <Plus size={16} /> Ajouter un choix
+                      <Trash2 size={18} />
                     </button>
-                  )}
-                </div>
+                  </div>
 
-                {/* Actions */}
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => openEditPage(page)}
-                    className="flex-1 bg-gray-100 text-gray-700 py-2 rounded hover:bg-gray-200 flex items-center justify-center gap-2"
-                  >
-                    <Pencil size={16} /> Modifier
-                  </button>
-                  {story?.startPageId !== page._id && !page.isEnd && (
-                    <button
-                      onClick={() => handleSetStartPage(page._id)}
-                      className="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded hover:bg-indigo-200 flex items-center justify-center gap-2"
-                      title="Définir comme page de départ"
-                    >
-                      <Play size={16} /> Départ
-                    </button>
+                  <p className="text-gray-700 mb-4 line-clamp-3">
+                    {page.content}
+                  </p>
+
+                  {page.illustration && (
+                    <img
+                      src={page.illustration}
+                      alt="Illustration"
+                      className="w-full h-32 object-cover rounded mb-4"
+                    />
                   )}
+
+                  {/* Choix */}
+                  <div className="border-t pt-4 flex-1">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">
+                      Choix ({page.choices?.length || 0}) :
+                    </p>
+                    {page.choices?.map((choice) => (
+                      <div
+                        key={choice._id}
+                        className="flex items-center justify-between bg-gray-50 p-2 rounded mb-2"
+                      >
+                        <span className="text-sm text-gray-700 flex-1 flex items-center gap-2">
+                          {choice.diceRequired && (
+                            <span
+                              className="text-orange-500"
+                              title={`Dé requis: ${choice.diceThreshold}+`}
+                            >
+                              <Dice6 size={14} />
+                            </span>
+                          )}
+                          {choice.text}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleDeleteChoice(page._id, choice._id)
+                          }
+                          className="text-red-500 hover:text-red-700 ml-2"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    {!page.isEnd && (
+                      <button
+                        onClick={() => openAddChoice(page)}
+                        className="text-sm text-indigo-600 hover:text-indigo-800 mt-2 flex items-center gap-1"
+                      >
+                        <Plus size={16} /> Ajouter un choix
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => openEditPage(page)}
+                      className="flex-1 bg-gray-100 text-gray-700 py-2 rounded hover:bg-gray-200 flex items-center justify-center gap-2"
+                    >
+                      <Pencil size={16} /> Modifier
+                    </button>
+                    {story?.startPageId !== page._id && !page.isEnd && (
+                      <button
+                        onClick={() => handleSetStartPage(page._id)}
+                        className="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded hover:bg-indigo-200 flex items-center justify-center gap-2"
+                        title="Définir comme page de départ"
+                      >
+                        <Play size={16} /> Départ
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {pages.length === 0 && (
-            <div className="col-span-full text-center py-12 text-gray-500">
-              Aucune page. Créez la première page de votre histoire !
-            </div>
-          )}
-        </div>
+            {pages.length === 0 && (
+              <div className="col-span-full text-center py-12 text-gray-500">
+                Aucune page. Créez la première page de votre histoire !
+              </div>
+            )}
+          </div>
         )}
 
         {/* Modal: Créer une page */}

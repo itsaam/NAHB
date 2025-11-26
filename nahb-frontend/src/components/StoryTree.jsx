@@ -74,8 +74,22 @@ export default function StoryTree({ pages, startPageId, onPageSelect }) {
           isOrphan,
         },
         style: {
-          background: isOrphan ? "#fef3c7" : isStart ? "#d1fae5" : isEnd ? "#fee2e2" : "#f3f4f6",
-          border: `2px solid ${isOrphan ? "#f59e0b" : isStart ? "#10b981" : isEnd ? "#ef4444" : "#9ca3af"}`,
+          background: isOrphan
+            ? "#fef3c7"
+            : isStart
+            ? "#d1fae5"
+            : isEnd
+            ? "#fee2e2"
+            : "#f3f4f6",
+          border: `2px solid ${
+            isOrphan
+              ? "#f59e0b"
+              : isStart
+              ? "#10b981"
+              : isEnd
+              ? "#ef4444"
+              : "#9ca3af"
+          }`,
           borderRadius: "8px",
           padding: "10px",
           fontSize: "12px",
@@ -95,7 +109,10 @@ export default function StoryTree({ pages, startPageId, onPageSelect }) {
           target: choice.targetPageId,
           label: choice.text?.substring(0, 15) + "...",
           labelStyle: { fontSize: 10 },
-          style: { stroke: choice.diceRequired ? "#f59e0b" : "#6b7280", strokeWidth: 2 },
+          style: {
+            stroke: choice.diceRequired ? "#f59e0b" : "#6b7280",
+            strokeWidth: 2,
+          },
           animated: choice.diceRequired,
           markerEnd: { type: "arrowclosed" },
         });
@@ -107,7 +124,11 @@ export default function StoryTree({ pages, startPageId, onPageSelect }) {
             target: choice.failurePageId,
             label: "Échec",
             labelStyle: { fontSize: 10, fill: "#ef4444" },
-            style: { stroke: "#ef4444", strokeWidth: 2, strokeDasharray: "5,5" },
+            style: {
+              stroke: "#ef4444",
+              strokeWidth: 2,
+              strokeDasharray: "5,5",
+            },
             markerEnd: { type: "arrowclosed" },
           });
         }
