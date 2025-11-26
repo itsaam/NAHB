@@ -67,14 +67,42 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/users", userRoutes);
 
-// Route 404
-app.use((req, res) => {
-  logger.warn(`Route introuvable : ${req.method} ${req.path}`);
-  res.status(404).json({
-    success: false,
-    error: "Route introuvable.",
+// Servir le frontend en production
+if (process.env.NODE_ENV === "production") {
+  const path = require("path");
+  const frontendPath = path.join(__dirname, "../../nahb-frontend/dist");
+
+  app.use(express.static(frontendPath));
+
+  // Catch-all route pour le frontend SPA
+  app.use((req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
-});
+} else {
+  // Route racine - info API (seulement en dev)
+  app.get("/", (req, res) => {
+    res.status(200).json({
+      success: true,
+      data: {
+        name: "NAHB API",
+        message: "Bienvenue sur l'API NAHB - Not A Horror Book",
+        version: "1.0.0",
+        documentation: "/api-docs",
+        health: "/api/health",
+        environment: process.env.NODE_ENV || "development",
+      },
+    });
+  });
+
+  // Route 404 en dev
+  app.use((req, res) => {
+    logger.warn(`Route introuvable : ${req.method} ${req.path}`);
+    res.status(404).json({
+      success: false,
+      error: "Route introuvable.",
+    });
+  });
+}
 
 // ==================== GESTION DES ERREURS ====================
 

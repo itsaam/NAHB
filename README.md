@@ -13,6 +13,7 @@ NAHB est une application web moderne permettant de créer, publier et jouer à d
 ### ✨ Fonctionnalités principales
 
 **Pour les auteurs :**
+
 - ✅ Création d'histoires avec titre, description, tags et thème
 - ✅ Éditeur graphique de pages et de choix
 - ✅ Ajout d'illustrations
@@ -21,6 +22,7 @@ NAHB est une application web moderne permettant de créer, publier et jouer à d
 - ✅ Statistiques de lecture
 
 **Pour les lecteurs :**
+
 - ✅ Bibliothèque d'histoires avec filtres (thème, tags, note)
 - ✅ Lecture interactive immersive
 - ✅ Sauvegarde automatique de progression
@@ -30,6 +32,7 @@ NAHB est une application web moderne permettant de créer, publier et jouer à d
 - ✅ Signalement de contenu
 
 **Pour les administrateurs :**
+
 - ✅ Modération (ban/suspend)
 - ✅ Gestion des signalements
 - ✅ Statistiques globales
@@ -39,6 +42,7 @@ NAHB est une application web moderne permettant de créer, publier et jouer à d
 ## 🛠️ Technologies
 
 ### Backend
+
 - **Node.js** + **Express.js**
 - **PostgreSQL** (données utilisateurs, sessions, stats)
 - **MongoDB** (contenu histoires, pages, choix)
@@ -46,15 +50,19 @@ NAHB est une application web moderne permettant de créer, publier et jouer à d
 - **Winston** (logs)
 
 ### Frontend
+
 - **React** + **Vite**
 - **React Router** (navigation)
 - **Axios** (requêtes API)
-- **Tailwind CSS** (styling)
-- **Google Fonts** (Cinzel, Lora, Inter)
+- **Tailwind CSS** (styling moderne)
+- **Lucide React** (icônes)
+- **Material-UI** (composants auth)
 
 ### Design
-- Thème : **Livre Ancien & Storytelling**
-- Couleurs : Marron cuir, Vert forêt, Or antique
+
+- Style : **Moderne, épuré, blanc**
+- Dark mode avec thème sombre
+- Design system cohérent
 - Responsive et accessible
 
 ---
@@ -148,6 +156,7 @@ npm run dev
 Le serveur démarre sur **http://localhost:3002**
 
 Console attendue :
+
 ```
 ✅ Serveur démarré sur le port 3002
 ✅ MongoDB connecté
@@ -308,45 +317,60 @@ NAHB/
 ## 📸 Captures d'écran
 
 ### Page d'accueil
+
 ![Homepage](./screenshots/homepage.png)
 
 ### Bibliothèque d'histoires
+
 ![Stories Library](./screenshots/stories.png)
 
 ### Lecteur d'histoire
+
 ![Story Reader](./screenshots/reader.png)
 
 ### Éditeur d'histoire
+
 ![Story Editor](./screenshots/editor.png)
 
 ### Dashboard Admin
+
 ![Admin Dashboard](./screenshots/admin.png)
 
 ---
 
 ## 🎨 Design System
 
-### Couleurs
+### Palette de couleurs
 
 ```css
-Primaire (Cuir):      #8b5a3c
-Secondaire (Forêt):   #2c5f4f
-Accent (Or):          #d4af37
-Background:           #f8f4e9
-Texte:                #2d2520
+Background:    #FFFFFF (blanc)
+Foreground:    #1C2025 (texte principal)
+Primary:       #6366F1 (indigo/violet)
+Accent:        #FF8A00 (orange)
+Secondary:     #F5F5F5 (gris clair)
+Border:        #E5E7EB (bordures subtiles)
+Destructive:   #EF4444 (rouge erreur)
 ```
+
+### Interface
+
+- Design épuré et moderne, fond blanc
+- Composants UI réutilisables (inspirés shadcn/ui)
+- Icônes Lucide React pour cohérence cross-platform
+- Animations et transitions fluides
+- Responsive mobile-first
 
 ### Typographie
 
-- **Titres:** Cinzel (serif, style ancien)
-- **Texte:** Lora (serif, lecture confortable)
-- **UI:** Inter (sans-serif, moderne)
+- **Police:** Inter (Google Fonts)
+- Style moderne et très lisible
+- Poids variables (300-900)
 
 ---
 
 ## 🧪 Tests
 
-*À implémenter*
+_À implémenter_
 
 ```bash
 # Backend
@@ -363,9 +387,11 @@ npm test
 ### Authentification
 
 #### POST `/api/auth/register`
+
 Inscription d'un nouvel utilisateur.
 
 **Body:**
+
 ```json
 {
   "pseudo": "JohnDoe",
@@ -376,6 +402,7 @@ Inscription d'un nouvel utilisateur.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -387,9 +414,11 @@ Inscription d'un nouvel utilisateur.
 ```
 
 #### POST `/api/auth/login`
+
 Connexion utilisateur.
 
 **Body:**
+
 ```json
 {
   "email": "john@example.com",
@@ -400,17 +429,21 @@ Connexion utilisateur.
 ### Histoires
 
 #### GET `/api/stories`
+
 Liste des histoires publiées (avec filtres).
 
 **Query params:**
+
 - `search` - Recherche texte
 - `theme` - Filtre par thème
 - `tags` - Filtre par tags
 
 #### POST `/api/stories`
+
 Créer une histoire (auteur requis).
 
 **Body:**
+
 ```json
 {
   "title": "Le Royaume Perdu",
@@ -423,9 +456,11 @@ Créer une histoire (auteur requis).
 ### Jeu
 
 #### POST `/api/game/start`
+
 Démarrer une partie.
 
 **Body:**
+
 ```json
 {
   "storyMongoId": "674350f8c8e5b0a2e8d4e123"
@@ -433,6 +468,7 @@ Démarrer une partie.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -446,9 +482,11 @@ Démarrer une partie.
 ```
 
 #### POST `/api/game/session/:sessionId/choice`
+
 Faire un choix.
 
 **Body:**
+
 ```json
 {
   "choiceId": "674350f8c8e5b0a2e8d4e456"
@@ -456,9 +494,11 @@ Faire un choix.
 ```
 
 #### GET `/api/game/session/:sessionId/stats`
+
 Obtenir les statistiques de parcours.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -504,10 +544,10 @@ Ce projet est réalisé dans le cadre d'un projet académique.
 ## 📞 Support
 
 Pour toute question ou problème :
+
 - Créer une issue sur le repository
 - Contacter l'équipe de développement
 
 ---
 
 **Développé avec ❤️ et beaucoup de ☕**
-

@@ -116,3 +116,4 @@ test-ui.html
 nahb-backend/scripts/createSampleGame.js
 nahb-backend/scripts/archonte-story.json
 nahb-backend/scripts/importStory.js
+nahb-backend/scripts/test-story.json

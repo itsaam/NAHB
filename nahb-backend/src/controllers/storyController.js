@@ -153,7 +153,9 @@ const getStoryById = async (req, res) => {
         !req.user ||
         (req.user.id !== story.authorPostgresId && req.user.role !== "admin")
       ) {
-        logger.warn(`Tentative d'accès non autorisée à un brouillon : ${id}`);
+        logger.warn(
+          `Tentative d'accès non autorisée à un brouillon : ${id} - User ID: ${req.user?.id}, Author ID: ${story.authorPostgresId}, Role: ${req.user?.role}`
+        );
         return res.status(403).json({
           success: false,
           error: "Vous n'avez pas accès à cette histoire.",
@@ -253,6 +255,14 @@ const updateStory = async (req, res) => {
           error: "La page de départ doit appartenir à cette histoire.",
         });
       }
+    }
+
+    if (updates.status === "publié" && !story.startPageId && !updates.startPageId) {
+      logger.warn(`Tentative de publication sans page de départ : ${id}`);
+      return res.status(400).json({
+        success: false,
+        error: "Vous devez définir une page de départ avant de publier cette histoire.",
+      });
     }
 
     // Mettre à jour les champs

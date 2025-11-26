@@ -1,19 +1,18 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { storiesAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { storiesAPI } from "../services/api";
+import { Plus, Edit, Trash2, BookOpen, Star } from "lucide-react";
 
 export default function MyStoriesPage() {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
+  const [showModal, setShowModal] = useState(false);
   const [newStory, setNewStory] = useState({
-    title: '',
-    description: '',
-    theme: '',
-    tags: '',
-    status: 'brouillon',
+    title: "",
+    description: "",
+    theme: "",
+    tags: "",
+    status: "brouillon",
   });
 
   useEffect(() => {
@@ -22,218 +21,287 @@ export default function MyStoriesPage() {
 
   const loadMyStories = async () => {
     try {
-      setLoading(true);
       const response = await storiesAPI.getMy();
       setStories(response.data.data);
     } catch (err) {
-      setError('Erreur lors du chargement');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateStory = async (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
-
     try {
       const data = {
         ...newStory,
-        tags: newStory.tags.split(',').map(t => t.trim()).filter(t => t),
+        tags: newStory.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t),
       };
-
       await storiesAPI.create(data);
-
-      setShowCreateModal(false);
+      setShowModal(false);
       setNewStory({
-        title: '',
-        description: '',
-        theme: '',
-        tags: '',
-        status: 'brouillon',
+        title: "",
+        description: "",
+        theme: "",
+        tags: "",
+        status: "brouillon",
       });
-
       loadMyStories();
-      alert('Histoire créée avec succès !');
+      alert("Histoire créée");
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur lors de la création');
+      alert(err.response?.data?.error || "Erreur");
     }
   };
 
-  const handleUpdateStory = async (id, updatedData) => {
-    try {
-      await storiesAPI.update(id, updatedData);
-      loadMyStories();
-      alert('Histoire mise à jour avec succès');
-    } catch (err) {
-      alert(err.response?.data?.error || 'Erreur lors de la mise à jour');
-    }
-  };
-
-  const handleDeleteStory = async (id, title) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer "${title}" ?`)) {
-      return;
-    }
-
+  const handleDelete = async (id, title) => {
+    if (!confirm(`Supprimer "${title}" ?`)) return;
     try {
       await storiesAPI.delete(id);
       loadMyStories();
-      alert('Histoire supprimée avec succès');
+      alert("Histoire supprimée");
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur lors de la suppression');
+      alert(err.response?.data?.error || "Erreur");
     }
   };
 
-  if (loading) {
+  const handlePublish = async (id, title) => {
+    if (!confirm(`Publier "${title}" ? Elle sera visible par tous les lecteurs.`)) return;
+    try {
+      await storiesAPI.update(id, { status: "publié" });
+      loadMyStories();
+      alert("Histoire publiée avec succès !");
+    } catch (err) {
+      alert(err.response?.data?.error || "Erreur lors de la publication");
+    }
+  };
+
+  const handleUnpublish = async (id, title) => {
+    if (!confirm(`Retirer "${title}" de la publication ? Elle redeviendra un brouillon.`)) return;
+    try {
+      await storiesAPI.update(id, { status: "brouillon" });
+      loadMyStories();
+      alert("Histoire remise en brouillon");
+    } catch (err) {
+      alert(err.response?.data?.error || "Erreur");
+    }
+  };
+
+  if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Chargement...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Chargement...</p>
       </div>
     );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Mes histoires</h1>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold"
-          >
-            ➕ Nouvelle histoire
-          </button>
-        </div>
+    <div className="min-h-screen bg-background">
+      <main className="container px-4 md:px-6 py-12">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold">Mes histoires</h1>
+              <p className="text-lg text-muted-foreground">
+                Gérez et créez vos aventures narratives
+              </p>
+            </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-
-        {stories.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-600 mb-4">
-              Vous n'avez pas encore créé d'histoire
-            </p>
             <button
-              onClick={() => setShowCreateModal(true)}
-              className="text-indigo-600 hover:text-indigo-800 font-semibold"
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center justify-center gap-2 h-11 rounded-md px-8 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity border-2 border-black"
             >
-              Créer ma première histoire
+              <Plus className="h-5 w-5" />
+              Nouvelle histoire
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stories.map((story) => (
-              <div
-                key={story._id}
-                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
+
+          {stories.length === 0 ? (
+            <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm p-12 text-center">
+              <p className="text-muted-foreground mb-4">
+                Vous n'avez pas encore créé d'histoire
+              </p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 py-2 text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                {story.coverImage && (
-                  <img
-                    src={story.coverImage}
-                    alt={story.title}
-                    className="w-full h-48 object-cover"
-                  />
-                )}
-
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {story.title}
-                    </h3>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${
-                        story.status === 'publié'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {story.status}
-                    </span>
+                Créer ma première histoire
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {stories.map((story) => (
+                <div
+                  key={story._id}
+                  className="rounded-lg border border-border bg-card text-card-foreground shadow-sm overflow-hidden"
+                >
+                  <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
+                    {story.coverImage ? (
+                      <img
+                        src={story.coverImage}
+                        alt={story.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-primary/30" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <span
+                        className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold ${
+                          story.status === "publié"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {story.status}
+                      </span>
+                    </div>
                   </div>
 
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {story.description || 'Aucune description'}
-                  </p>
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <h3 className="font-semibold text-lg leading-none tracking-tight line-clamp-1 mb-2">
+                        {story.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {story.description || "Aucune description"}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                    <span>🎮 {story.stats?.totalPlays || 0}</span>
-                    <span>⭐ {story.rating?.average?.toFixed(1) || 'N/A'}</span>
-                    <span>✅ {story.stats?.totalCompletions || 0}</span>
-                  </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <BookOpen className="w-4 h-4" />
+                        <span>{story.stats?.totalPlays || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4" />
+                        <span>
+                          {story.rating?.average?.toFixed(1) || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>✅ {story.stats?.totalCompletions || 0}</span>
+                      </div>
+                    </div>
 
-                  <div className="flex gap-2">
-                    <Link
-                        to={`/story/${story._id}/edit`}
-                        className="flex-1 bg-indigo-600 text-white text-center py-2 rounded hover:bg-indigo-700 text-sm font-medium"
-                    >
-                      ✏️ Éditer
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteStory(story._id, story.title)}
-                      className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm font-medium"
-                    >
-                      🗑️
-                    </button>
+                    <div className="flex flex-col gap-2 pt-2">
+                      <div className="flex gap-2">
+                        <Link
+                          to={`/story/${story._id}/edit`}
+                          className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Éditer
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(story._id, story.title)}
+                          className="inline-flex items-center justify-center h-10 w-10 rounded-md text-sm font-medium bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {story.status === "brouillon" ? (
+                        <button
+                          onClick={() => handlePublish(story._id, story.title)}
+                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        >
+                          📢 Publier
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUnpublish(story._id, story.title)}
+                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-yellow-600 text-white hover:bg-yellow-700 transition-colors"
+                        >
+                          📝 Retirer de la publication
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Modal de création */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8 space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold leading-none tracking-tight">
+                  Créer une nouvelle histoire
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5">
+                  Commencez votre aventure narrative en remplissant les
+                  informations ci-dessous
+                </p>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Modal de création */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Créer une nouvelle histoire
-              </h2>
-
-              <form onSubmit={handleCreateStory} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Titre *
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="title"
+                    className="text-sm font-medium leading-none"
+                  >
+                    Titre
                   </label>
                   <input
+                    id="title"
                     type="text"
                     required
                     minLength={3}
-                    maxLength={255}
-                    value={newStory.title}
-                    onChange={(e) => setNewStory({ ...newStory, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="Le titre de votre histoire"
+                    value={newStory.title}
+                    onChange={(e) =>
+                      setNewStory({ ...newStory, title: e.target.value })
+                    }
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="description"
+                    className="text-sm font-medium leading-none"
+                  >
                     Description
                   </label>
                   <textarea
-                    rows={4}
-                    maxLength={2000}
+                    id="description"
+                    placeholder="Décrivez brièvement votre histoire"
+                    rows={6}
                     value={newStory.description}
-                    onChange={(e) => setNewStory({ ...newStory, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Décrivez votre histoire..."
+                    onChange={(e) =>
+                      setNewStory({ ...newStory, description: e.target.value })
+                    }
+                    className="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px]"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="theme"
+                    className="text-sm font-medium leading-none"
+                  >
                     Thème
                   </label>
                   <select
+                    id="theme"
                     value={newStory.theme}
-                    onChange={(e) => setNewStory({ ...newStory, theme: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    onChange={(e) =>
+                      setNewStory({ ...newStory, theme: e.target.value })
+                    }
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Aucun thème</option>
+                    <option value="">Choisir un thème</option>
                     <option value="fantastique">Fantastique</option>
-                    <option value="science-fiction">Science-fiction</option>
+                    <option value="science-fiction">Science-Fiction</option>
                     <option value="horreur">Horreur</option>
                     <option value="aventure">Aventure</option>
                     <option value="romance">Romance</option>
@@ -241,54 +309,68 @@ export default function MyStoriesPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tags (séparés par des virgules)
+                <div className="space-y-2">
+                  <label
+                    htmlFor="tags"
+                    className="text-sm font-medium leading-none"
+                  >
+                    Tags
                   </label>
                   <input
+                    id="tags"
                     type="text"
-                    value={newStory.tags}
-                    onChange={(e) => setNewStory({ ...newStory, tags: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="ex: médiéval, dragons, quête"
+                    value={newStory.tags}
+                    onChange={(e) =>
+                      setNewStory({ ...newStory, tags: e.target.value })
+                    }
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Séparez les tags par des virgules
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="status"
+                    className="text-sm font-medium leading-none"
+                  >
                     Statut
                   </label>
                   <select
+                    id="status"
                     value={newStory.status}
-                    onChange={(e) => setNewStory({ ...newStory, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    onChange={(e) =>
+                      setNewStory({ ...newStory, status: e.target.value })
+                    }
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="brouillon">Brouillon</option>
                     <option value="publié">Publié</option>
                   </select>
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold"
-                  >
-                    Créer
-                  </button>
+                <div className="flex gap-2 pt-4">
                   <button
                     type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 font-semibold"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 inline-flex items-center justify-center h-10 rounded-md px-4 text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
                     Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 inline-flex items-center justify-center h-10 rounded-md px-4 text-sm font-medium bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 hover:border-blue-700 transition-colors"
+                  >
+                    Créer
                   </button>
                 </div>
               </form>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
-

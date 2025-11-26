@@ -10,7 +10,9 @@ const {
 } = require("../controllers/storyController");
 const {
   authenticate,
+  optionalAuth,
   requireAuthor,
+  canCreateStory,
 } = require("../middlewares/authMiddleware");
 const {
   validate,
@@ -72,6 +74,7 @@ router.post(
   "/",
   authenticate,
   requireAuthor,
+  canCreateStory,
   validate(createStorySchema),
   createStory
 );
@@ -98,7 +101,7 @@ router.get("/my", authenticate, requireAuthor, getMyStories);
  * @desc    Récupérer une histoire par son ID
  * @access  Public (mais restrictions selon statut)
  */
-router.get("/:id", getStoryById);
+router.get("/:id", optionalAuth, getStoryById);
 
 /**
  * @route   PUT /api/stories/:id
@@ -109,6 +112,7 @@ router.put(
   "/:id",
   authenticate,
   requireAuthor,
+  canCreateStory,
   validate(updateStorySchema),
   updateStory
 );

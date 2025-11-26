@@ -7,6 +7,7 @@ const {
   getMySessions,
   getUnlockedEndings,
   getPathStats,
+  getMyActivities,
 } = require("../controllers/gameController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
@@ -31,7 +32,7 @@ const { authenticate } = require("../middlewares/authMiddleware");
  *       201:
  *         description: Session créée
  */
-router.post("/start", startGame);
+router.post("/start", authenticate, startGame);
 
 /**
  * @swagger
@@ -109,5 +110,12 @@ router.get("/story/:storyId/endings", authenticate, getUnlockedEndings);
  * @access  Public
  */
 router.get("/session/:sessionId/stats", getPathStats);
+
+/**
+ * @route   GET /api/game/my-activities
+ * @desc    Récupérer les activités de l'utilisateur (histoires terminées et en cours)
+ * @access  Privé
+ */
+router.get("/my-activities", authenticate, getMyActivities);
 
 module.exports = router;

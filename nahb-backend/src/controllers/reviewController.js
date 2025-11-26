@@ -89,7 +89,7 @@ const getStoryReviews = async (req, res) => {
 
     const result = await pool.query(
       `SELECT r.id, r.rating, r.comment, r.created_at, 
-              u.id as user_id, u.pseudo as user_pseudo 
+              u.id as user_id, u.pseudo 
        FROM reviews r 
        JOIN users u ON r.user_id = u.id 
        WHERE r.story_mongo_id = $1 
@@ -97,16 +97,16 @@ const getStoryReviews = async (req, res) => {
       [storyId]
     );
 
-    logger.info(`${result.rows.length} reviews trouvées pour l'histoire ${storyId}`);
+    logger.info(
+      `${result.rows.length} reviews trouvées pour l'histoire ${storyId}`
+    );
 
     return res.status(200).json({
       success: true,
       data: result.rows,
     });
   } catch (err) {
-    logger.error(
-      `Erreur lors de la récupération des reviews : ${err.message}`
-    );
+    logger.error(`Erreur lors de la récupération des reviews : ${err.message}`);
     return res.status(500).json({
       success: false,
       error: "Erreur serveur lors de la récupération des reviews.",
@@ -131,16 +131,16 @@ const getMyReviews = async (req, res) => {
       [userId]
     );
 
-    logger.info(`${result.rows.length} reviews trouvées pour l'utilisateur ${userId}`);
+    logger.info(
+      `${result.rows.length} reviews trouvées pour l'utilisateur ${userId}`
+    );
 
     return res.status(200).json({
       success: true,
       data: result.rows,
     });
   } catch (err) {
-    logger.error(
-      `Erreur lors de la récupération des reviews : ${err.message}`
-    );
+    logger.error(`Erreur lors de la récupération des reviews : ${err.message}`);
     return res.status(500).json({
       success: false,
       error: "Erreur serveur lors de la récupération des reviews.",
@@ -179,7 +179,6 @@ const deleteReview = async (req, res) => {
       });
     }
 
-
     await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
 
     const ratingsResult = await pool.query(
@@ -216,4 +215,3 @@ module.exports = {
   getMyReviews,
   deleteReview,
 };
-

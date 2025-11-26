@@ -36,7 +36,11 @@ const initTables = async () => {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         role VARCHAR(20) DEFAULT 'lecteur' CHECK (role IN ('lecteur', 'auteur', 'admin')),
+        avatar TEXT,
         is_banned BOOLEAN DEFAULT FALSE,
+        ban_type VARCHAR(20) DEFAULT NULL CHECK (ban_type IN ('full', 'author', 'comment')),
+        ban_reason TEXT,
+        banned_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

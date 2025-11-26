@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ['nodejs-18_x']
+
+[phases.install]
+cmds = [
+  'cd nahb-backend && npm install --production=false && cd ../nahb-frontend && npm install --production=false'
+]
+
+[phases.build]
+cmds = [
+  'cd nahb-frontend && npm run build'
+]
+
+[start]
+cmd = 'cd nahb-backend && node src/server.js'

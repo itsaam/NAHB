@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { storiesAPI, pagesAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { storiesAPI, pagesAPI } from "../services/api";
+import { Plus, Pencil, Trash2, X, Flag } from "lucide-react";
 
 export default function StoryEditorPage() {
   const { storyId } = useParams();
@@ -16,15 +17,15 @@ export default function StoryEditorPage() {
   const [showAddChoiceModal, setShowAddChoiceModal] = useState(false);
 
   const [pageForm, setPageForm] = useState({
-    content: '',
-    illustration: '',
+    content: "",
+    illustration: "",
     isEnd: false,
-    endLabel: '',
+    endLabel: "",
   });
 
   const [choiceForm, setChoiceForm] = useState({
-    text: '',
-    nextPageId: '',
+    text: "",
+    nextPageId: "",
   });
 
   useEffect(() => {
@@ -41,8 +42,8 @@ export default function StoryEditorPage() {
       setStory(storyRes.data.data);
       setPages(pagesRes.data.data);
     } catch (err) {
-      alert('Erreur lors du chargement');
-      navigate('/my-stories');
+      alert("Erreur lors du chargement");
+      navigate("/my-stories");
     } finally {
       setLoading(false);
     }
@@ -56,11 +57,19 @@ export default function StoryEditorPage() {
         ...pageForm,
       });
       setShowCreatePageModal(false);
-      setPageForm({ content: '', illustration: '', isEnd: false, endLabel: '' });
+      setPageForm({
+        content: "",
+        illustration: "",
+        isEnd: false,
+        endLabel: "",
+      });
       loadStoryAndPages();
-      alert('✅ Page créée avec succès !');
+      alert("✅ Page créée avec succès !");
     } catch (err) {
-      alert('❌ ' + (err.response?.data?.error || 'Erreur lors de la création'));
+      const errorMsg =
+        err.response?.data?.error || "Erreur lors de la création";
+      const details = err.response?.data?.details?.join("\n") || "";
+      alert("❌ " + errorMsg + (details ? "\n\n" + details : ""));
     }
   };
 
@@ -70,22 +79,29 @@ export default function StoryEditorPage() {
       await pagesAPI.update(selectedPage._id, pageForm);
       setShowEditPageModal(false);
       setSelectedPage(null);
-      setPageForm({ content: '', illustration: '', isEnd: false, endLabel: '' });
+      setPageForm({
+        content: "",
+        illustration: "",
+        isEnd: false,
+        endLabel: "",
+      });
       loadStoryAndPages();
-      alert('✅ Page modifiée avec succès !');
+      alert("✅ Page modifiée avec succès !");
     } catch (err) {
-      alert('❌ ' + (err.response?.data?.error || 'Erreur lors de la modification'));
+      alert(
+        "❌ " + (err.response?.data?.error || "Erreur lors de la modification")
+      );
     }
   };
 
   const handleDeletePage = async (pageId) => {
-    if (!confirm('Supprimer cette page ?')) return;
+    if (!confirm("Supprimer cette page ?")) return;
     try {
       await pagesAPI.delete(pageId);
       loadStoryAndPages();
-      alert('✅ Page supprimée !');
+      alert("✅ Page supprimée !");
     } catch (err) {
-      alert('❌ ' + (err.response?.data?.error || 'Erreur'));
+      alert("❌ " + (err.response?.data?.error || "Erreur"));
     }
   };
 
@@ -94,22 +110,22 @@ export default function StoryEditorPage() {
     try {
       await pagesAPI.addChoice(selectedPage._id, choiceForm);
       setShowAddChoiceModal(false);
-      setChoiceForm({ text: '', nextPageId: '' });
+      setChoiceForm({ text: "", nextPageId: "" });
       loadStoryAndPages();
-      alert('✅ Choix ajouté !');
+      alert("✅ Choix ajouté !");
     } catch (err) {
-      alert('❌ ' + (err.response?.data?.error || 'Erreur'));
+      alert("❌ " + (err.response?.data?.error || "Erreur"));
     }
   };
 
   const handleDeleteChoice = async (pageId, choiceId) => {
-    if (!confirm('Supprimer ce choix ?')) return;
+    if (!confirm("Supprimer ce choix ?")) return;
     try {
       await pagesAPI.deleteChoice(pageId, choiceId);
       loadStoryAndPages();
-      alert('✅ Choix supprimé !');
+      alert("✅ Choix supprimé !");
     } catch (err) {
-      alert('❌ ' + (err.response?.data?.error || 'Erreur'));
+      alert("❌ " + (err.response?.data?.error || "Erreur"));
     }
   };
 
@@ -117,9 +133,9 @@ export default function StoryEditorPage() {
     setSelectedPage(page);
     setPageForm({
       content: page.content,
-      illustration: page.illustration || '',
+      illustration: page.illustration || "",
       isEnd: page.isEnd,
-      endLabel: page.endLabel || '',
+      endLabel: page.endLabel || "",
     });
     setShowEditPageModal(true);
   };
@@ -144,14 +160,16 @@ export default function StoryEditorPage() {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{story?.title}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {story?.title}
+              </h1>
               <p className="text-gray-600 mt-1">Éditeur de pages</p>
             </div>
             <button
               onClick={() => setShowCreatePageModal(true)}
-              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold"
+              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold flex items-center gap-2"
             >
-              ➕ Nouvelle page
+              <Plus size={20} /> Nouvelle page
             </button>
           </div>
         </div>
@@ -159,24 +177,30 @@ export default function StoryEditorPage() {
         {/* Pages List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pages.map((page) => (
-            <div key={page._id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
+            <div
+              key={page._id}
+              className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex flex-col"
+            >
+              <div className="p-6 flex flex-col flex-1">
+                <div className="flex items-start justify-between mb-4 gap-2">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-500 mb-2">
                       ID: {page._id.substring(0, 8)}...
                     </p>
                     {page.isEnd && (
-                      <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded">
-                        🏁 Fin: {page.endLabel || 'Fin'}
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded max-w-full overflow-hidden">
+                        <Flag size={14} className="flex-shrink-0" />
+                        <span className="truncate">
+                          Fin: {page.endLabel || "Fin"}
+                        </span>
                       </span>
                     )}
                   </div>
                   <button
                     onClick={() => handleDeletePage(page._id)}
-                    className="text-red-600 hover:text-red-800"
+                    className="text-red-600 hover:text-red-800 flex-shrink-0"
                   >
-                    🗑️
+                    <Trash2 size={18} />
                   </button>
                 </div>
 
@@ -193,27 +217,32 @@ export default function StoryEditorPage() {
                 )}
 
                 {/* Choix */}
-                <div className="border-t pt-4">
+                <div className="border-t pt-4 flex-1">
                   <p className="text-sm font-semibold text-gray-700 mb-2">
                     Choix ({page.choices?.length || 0}) :
                   </p>
                   {page.choices?.map((choice) => (
-                    <div key={choice._id} className="flex items-center justify-between bg-gray-50 p-2 rounded mb-2">
-                      <span className="text-sm text-gray-700 flex-1">{choice.text}</span>
+                    <div
+                      key={choice._id}
+                      className="flex items-center justify-between bg-gray-50 p-2 rounded mb-2"
+                    >
+                      <span className="text-sm text-gray-700 flex-1">
+                        {choice.text}
+                      </span>
                       <button
                         onClick={() => handleDeleteChoice(page._id, choice._id)}
                         className="text-red-500 hover:text-red-700 ml-2"
                       >
-                        ❌
+                        <X size={16} />
                       </button>
                     </div>
                   ))}
                   {!page.isEnd && (
                     <button
                       onClick={() => openAddChoice(page)}
-                      className="text-sm text-indigo-600 hover:text-indigo-800 mt-2"
+                      className="text-sm text-indigo-600 hover:text-indigo-800 mt-2 flex items-center gap-1"
                     >
-                      ➕ Ajouter un choix
+                      <Plus size={16} /> Ajouter un choix
                     </button>
                   )}
                 </div>
@@ -222,9 +251,9 @@ export default function StoryEditorPage() {
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={() => openEditPage(page)}
-                    className="flex-1 bg-gray-100 text-gray-700 py-2 rounded hover:bg-gray-200"
+                    className="flex-1 bg-gray-100 text-gray-700 py-2 rounded hover:bg-gray-200 flex items-center justify-center gap-2"
                   >
-                    ✏️ Modifier
+                    <Pencil size={16} /> Modifier
                   </button>
                 </div>
               </div>
@@ -248,16 +277,23 @@ export default function StoryEditorPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contenu de la page *
+                        Contenu de la page * (min 10, max 10 000 caractères)
                       </label>
                       <textarea
                         required
                         rows={6}
+                        minLength={10}
+                        maxLength={10000}
                         value={pageForm.content}
-                        onChange={(e) => setPageForm({ ...pageForm, content: e.target.value })}
+                        onChange={(e) =>
+                          setPageForm({ ...pageForm, content: e.target.value })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                         placeholder="Racontez ce qui se passe..."
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {pageForm.content.length}/10 000 caractères
+                      </p>
                     </div>
 
                     <div>
@@ -267,7 +303,12 @@ export default function StoryEditorPage() {
                       <input
                         type="url"
                         value={pageForm.illustration}
-                        onChange={(e) => setPageForm({ ...pageForm, illustration: e.target.value })}
+                        onChange={(e) =>
+                          setPageForm({
+                            ...pageForm,
+                            illustration: e.target.value,
+                          })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         placeholder="https://..."
                       />
@@ -278,7 +319,9 @@ export default function StoryEditorPage() {
                         type="checkbox"
                         id="isEnd"
                         checked={pageForm.isEnd}
-                        onChange={(e) => setPageForm({ ...pageForm, isEnd: e.target.checked })}
+                        onChange={(e) =>
+                          setPageForm({ ...pageForm, isEnd: e.target.checked })
+                        }
                         className="rounded"
                       />
                       <label htmlFor="isEnd" className="text-sm text-gray-700">
@@ -289,15 +332,25 @@ export default function StoryEditorPage() {
                     {pageForm.isEnd && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Label de la fin
+                          Label de la fin (max 100 caractères)
                         </label>
                         <input
                           type="text"
+                          required
+                          maxLength={100}
                           value={pageForm.endLabel}
-                          onChange={(e) => setPageForm({ ...pageForm, endLabel: e.target.value })}
+                          onChange={(e) =>
+                            setPageForm({
+                              ...pageForm,
+                              endLabel: e.target.value,
+                            })
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                           placeholder="Fin heureuse, Fin tragique..."
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                          {pageForm.endLabel.length}/100 caractères
+                        </p>
                       </div>
                     )}
                   </div>
@@ -333,15 +386,22 @@ export default function StoryEditorPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contenu
+                        Contenu * (min 10, max 10 000 caractères)
                       </label>
                       <textarea
                         required
                         rows={6}
+                        minLength={10}
+                        maxLength={10000}
                         value={pageForm.content}
-                        onChange={(e) => setPageForm({ ...pageForm, content: e.target.value })}
+                        onChange={(e) =>
+                          setPageForm({ ...pageForm, content: e.target.value })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {pageForm.content.length}/10 000 caractères
+                      </p>
                     </div>
 
                     <div>
@@ -351,7 +411,12 @@ export default function StoryEditorPage() {
                       <input
                         type="url"
                         value={pageForm.illustration}
-                        onChange={(e) => setPageForm({ ...pageForm, illustration: e.target.value })}
+                        onChange={(e) =>
+                          setPageForm({
+                            ...pageForm,
+                            illustration: e.target.value,
+                          })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
@@ -361,19 +426,36 @@ export default function StoryEditorPage() {
                         type="checkbox"
                         id="isEndEdit"
                         checked={pageForm.isEnd}
-                        onChange={(e) => setPageForm({ ...pageForm, isEnd: e.target.checked })}
+                        onChange={(e) =>
+                          setPageForm({ ...pageForm, isEnd: e.target.checked })
+                        }
                       />
                       <label htmlFor="isEndEdit">Page de fin</label>
                     </div>
 
                     {pageForm.isEnd && (
-                      <input
-                        type="text"
-                        value={pageForm.endLabel}
-                        onChange={(e) => setPageForm({ ...pageForm, endLabel: e.target.value })}
-                        placeholder="Label de fin"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Label de la fin (max 100 caractères)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={100}
+                          value={pageForm.endLabel}
+                          onChange={(e) =>
+                            setPageForm({
+                              ...pageForm,
+                              endLabel: e.target.value,
+                            })
+                          }
+                          placeholder="Label de fin"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          {pageForm.endLabel.length}/100 caractères
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -414,7 +496,9 @@ export default function StoryEditorPage() {
                         type="text"
                         required
                         value={choiceForm.text}
-                        onChange={(e) => setChoiceForm({ ...choiceForm, text: e.target.value })}
+                        onChange={(e) =>
+                          setChoiceForm({ ...choiceForm, text: e.target.value })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         placeholder="Aller à gauche, Parler au garde..."
                       />
@@ -427,15 +511,21 @@ export default function StoryEditorPage() {
                       <select
                         required
                         value={choiceForm.nextPageId}
-                        onChange={(e) => setChoiceForm({ ...choiceForm, nextPageId: e.target.value })}
+                        onChange={(e) =>
+                          setChoiceForm({
+                            ...choiceForm,
+                            nextPageId: e.target.value,
+                          })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       >
                         <option value="">-- Sélectionner une page --</option>
                         {pages
-                          .filter(p => p._id !== selectedPage._id)
-                          .map(p => (
+                          .filter((p) => p._id !== selectedPage._id)
+                          .map((p) => (
                             <option key={p._id} value={p._id}>
-                              {p.content.substring(0, 50)}... {p.isEnd ? '(FIN)' : ''}
+                              {p.content.substring(0, 50)}...{" "}
+                              {p.isEnd ? "(FIN)" : ""}
                             </option>
                           ))}
                       </select>
@@ -466,4 +556,3 @@ export default function StoryEditorPage() {
     </div>
   );
 }
-
