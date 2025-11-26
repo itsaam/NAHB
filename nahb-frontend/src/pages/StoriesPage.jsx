@@ -1,3 +1,6 @@
+import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { storiesAPI } from '../services/api';
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { storiesAPI } from "../services/api";
@@ -6,24 +9,64 @@ import { Search, BookOpen, Star } from "lucide-react";
 export default function StoriesPage() {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [errorDetails, setErrorDetails] = useState(null);
+  const [search, setSearch] = useState('');
+  const [theme, setTheme] = useState('');
+  const [lastParams, setLastParams] = useState(null);
+
+  // Debounce pour la recherche
+  const searchTimeout = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
+  }, [search]);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState("");
 
   useEffect(() => {
     loadStories();
-  }, [search, theme]);
+  }, [debouncedSearch, theme]);
 
   const loadStories = async () => {
     try {
       setLoading(true);
+      setError('');
+      setErrorDetails(null);
+
       const params = {};
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (theme) params.theme = theme;
 
+      // Garder une trace des params envoyés (debug)
+      setLastParams(params);
+      console.debug('Fetching /api/stories with params:', params);
+
       const response = await storiesAPI.getAll(params);
-      setStories(response.data.data);
+
+      // Vérifier la structure attendue
+      if (!response || !response.data || !response.data.data) {
+        throw new Error('Réponse API inattendue');
+      }
+
+      setStories(response.data.data || []);
     } catch (err) {
+      console.error('Erreur lors du chargement des histoires', err);
+      setError('Erreur lors du chargement des histoires');
+
+      // Remplir des détails utiles pour debug
+      const details = {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      };
+      setErrorDetails(details);
       setError("Erreur lors du chargement des histoires");
       console.error(err);
     } finally {
@@ -69,6 +112,51 @@ export default function StoriesPage() {
             </select>
           </div>
 
+        {/* Affichage d'erreur détaillé pour debug */}
+        {error && (
+          <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-4">
+            <div>{error}</div>
+            {errorDetails && (
+              <pre className="mt-2 text-xs text-red-700 whitespace-pre-wrap">{JSON.stringify(errorDetails, null, 2)}</pre>
+            )}
+            {lastParams && (
+              <div className="mt-2 text-xs text-gray-600">Params envoyés: {JSON.stringify(lastParams)}</div>
+            )}
+          </div>
+        )}
+
+        {/* Liste des histoires */}
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Chargement...</p>
+          </div>
+        ) : stories.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Aucune histoire trouvée</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stories.map((story) => (
+              <Link
+                key={story._id}
+                to={`/story/${story._id}`}
+                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
+              >
+                {story.coverImage && (
+                  <img
+                    src={story.coverImage}
+                    alt={story.title}
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+                <div className="p-4">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {story.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    {story.description || 'Aucune description'}
+                  </p>
+
           {loading && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Chargement...</p>
@@ -80,6 +168,7 @@ export default function StoriesPage() {
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
+
 
           {/* Stories Grid */}
           {!loading && !error && (

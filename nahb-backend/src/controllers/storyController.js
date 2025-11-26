@@ -3,6 +3,14 @@ const Page = require("../models/mongodb/Page");
 const logger = require("../utils/logger");
 
 /**
+ * Fonction utilitaire pour échapper les caractères spéciaux dans une chaîne,
+ * afin de créer une expression régulière sécurisée.
+ */
+function escapeRegExp(string) {
+  return String(string).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
  * Créer une nouvelle histoire (niveau 10/20)
  */
 const createStory = async (req, res) => {
@@ -48,15 +56,19 @@ const createStory = async (req, res) => {
  */
 const getPublishedStories = async (req, res) => {
   try {
-    const {
+    let {
       search,
       theme,
       tags,
       sortBy = "createdAt",
       order = "desc",
+      genre,
     } = req.query;
 
-    logger.info("Récupération des histoires publiées");
+    // Normalisation et nettoyage des entrées
+    if (typeof search === "string") search = search.trim();
+    if (typeof theme === "string") theme = theme.trim();
+    if (typeof genre === "string") genre = genre.trim();
 
     // Construire le filtre
     const filter = {
@@ -64,17 +76,20 @@ const getPublishedStories = async (req, res) => {
       isSuspended: false,
     };
 
-    // Recherche textuelle
+    // Recherche textuelle (sur le titre uniquement)
     if (search) {
-      filter.$text = { $search: search };
+      const s = String(search).trim();
+      if (s.length) {
+        filter.title = { $regex: escapeRegExp(s), $options: "i" };
+      }
     }
 
-    // Filtre par thème
-    if (theme) {
-      filter.theme = theme;
+    // Filtre par thème (accepte 'theme' ou 'genre', insensible à la casse, mode contains)
+    const themeQuery = (theme || genre || "").toString().trim();
+    if (themeQuery) {
+      filter.theme = { $regex: escapeRegExp(themeQuery), $options: "i" };
     }
 
-    // Filtre par tags
     if (tags) {
       const tagsArray = Array.isArray(tags) ? tags : [tags];
       filter.tags = { $in: tagsArray };
@@ -96,9 +111,7 @@ const getPublishedStories = async (req, res) => {
       data: stories,
     });
   } catch (err) {
-    logger.error(
-      `Erreur lors de la récupération des histoires : ${err.message}`
-    );
+    logger.error(`Erreur lors de la récupération des histoires : ${err.message}`);
     return res.status(500).json({
       success: false,
       error: "Erreur serveur lors de la récupération des histoires.",
