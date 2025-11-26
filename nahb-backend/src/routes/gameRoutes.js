@@ -8,6 +8,7 @@ const {
   getUnlockedEndings,
   getPathStats,
   getMyActivities,
+  navigateToPage,
 } = require("../controllers/gameController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
@@ -117,5 +118,12 @@ router.get("/session/:sessionId/stats", getPathStats);
  * @access  Privé
  */
 router.get("/my-activities", authenticate, getMyActivities);
+
+/**
+ * @route   POST /api/game/session/:sessionId/navigate
+ * @desc    Naviguer directement vers une page (pour les échecs de jet de dé)
+ * @access  Public
+ */
+router.post("/session/:sessionId/navigate", navigateToPage);
 
 module.exports = router;
