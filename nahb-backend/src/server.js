@@ -45,6 +45,21 @@ app.use((req, res, next) => {
 // Swagger documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
+// Route racine - info API
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      name: "NAHB API",
+      message: "Bienvenue sur l'API NAHB - Not A Horror Book",
+      version: "1.0.0",
+      documentation: "/api-docs",
+      health: "/api/health",
+      environment: process.env.NODE_ENV || "development",
+    },
+  });
+});
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({
