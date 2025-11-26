@@ -88,7 +88,6 @@ export default function ReadStoryPage() {
   };
 
   const handleSaveAndQuit = () => {
-    // La session est déjà sauvegardée automatiquement
     navigate("/stories");
   };
 
