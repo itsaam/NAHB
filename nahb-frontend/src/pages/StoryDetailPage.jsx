@@ -146,7 +146,7 @@ export default function StoryDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Chargement...</p>
+        <p className="text-coffee-bean-600">Chargement...</p>
       </div>
     );
   }
@@ -156,7 +156,10 @@ export default function StoryDetailPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || "Histoire introuvable"}</p>
-          <Link to="/stories" className="text-indigo-600 hover:text-indigo-800">
+          <Link
+            to="/stories"
+            className="text-cherry-rose-500 hover:text-cherry-rose-700"
+          >
             Retour aux histoires
           </Link>
         </div>
@@ -165,7 +168,7 @@ export default function StoryDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-pale-sky-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* En-tête */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
@@ -178,26 +181,26 @@ export default function StoryDetailPage() {
           )}
 
           <div className="p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-coffee-bean-900 mb-4">
               {story.title}
             </h1>
 
             <div className="flex items-center gap-4 mb-4 flex-wrap">
               {story.theme && (
-                <span className="px-3 py-1 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-full">
+                <span className="px-3 py-1 text-sm font-medium text-cherry-rose-500 bg-cherry-rose-100 rounded-full">
                   {story.theme}
                 </span>
               )}
-              <span className="flex items-center gap-1.5 text-gray-600">
+              <span className="flex items-center gap-1.5 text-coffee-bean-600">
                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 {story.rating?.average?.toFixed(1) || "N/A"} (
                 {story.rating?.count || 0} avis)
               </span>
-              <span className="flex items-center gap-1.5 text-gray-600">
+              <span className="flex items-center gap-1.5 text-coffee-bean-600">
                 <GamepadIcon className="w-4 h-4" />
                 {story.stats?.totalPlays || 0} parties
               </span>
-              <span className="flex items-center gap-1.5 text-gray-600">
+              <span className="flex items-center gap-1.5 text-coffee-bean-600">
                 <CheckCircle className="w-4 h-4" />
                 {story.stats?.totalCompletions || 0} complétions
               </span>
@@ -208,7 +211,7 @@ export default function StoryDetailPage() {
                 {story.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded"
+                    className="px-2 py-1 text-xs bg-pale-sky-200 text-coffee-bean-700 rounded"
                   >
                     #{tag}
                   </span>
@@ -216,7 +219,7 @@ export default function StoryDetailPage() {
               </div>
             )}
 
-            <p className="text-gray-700 mb-6 whitespace-pre-line">
+            <p className="text-coffee-bean-700 mb-6 whitespace-pre-line">
               {story.description || "Aucune description disponible"}
             </p>
 
@@ -225,19 +228,19 @@ export default function StoryDetailPage() {
                 <div className="flex-1 space-y-3">
                   <button
                     onClick={handlePlay}
-                    className="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-seaweed-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-seaweed-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Play className="w-5 h-5" fill="white" />
                     Reprendre votre partie
                   </button>
-                  <p className="text-sm text-gray-600 text-center">
+                  <p className="text-sm text-coffee-bean-600 text-center">
                     Vous avez une partie en cours
                   </p>
                 </div>
               ) : (
                 <button
                   onClick={handlePlay}
-                  className="flex-1 bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-cherry-rose-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-cherry-rose-600 transition-colors flex items-center justify-center gap-2"
                 >
                   <Play className="w-5 h-5" fill="white" />
                   Jouer maintenant
@@ -259,7 +262,7 @@ export default function StoryDetailPage() {
 
         {/* Avis */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <h2 className="text-2xl font-bold text-coffee-bean-900 mb-6">
             Avis des lecteurs ({reviews.length})
           </h2>
 
@@ -267,14 +270,14 @@ export default function StoryDetailPage() {
           {user && (
             <form
               onSubmit={handleSubmitReview}
-              className="mb-8 p-4 bg-gray-50 rounded-lg"
+              className="mb-8 p-4 bg-pale-sky-50 rounded-lg"
             >
-              <h3 className="font-semibold text-gray-900 mb-4">
+              <h3 className="font-semibold text-coffee-bean-900 mb-4">
                 Laisser un avis
               </h3>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                   Note
                 </label>
                 <div className="flex gap-1">
@@ -289,7 +292,7 @@ export default function StoryDetailPage() {
                         className={`w-8 h-8 ${
                           star <= rating
                             ? "fill-yellow-400 text-yellow-400"
-                            : "fill-gray-200 text-gray-300"
+                            : "fill-pale-sky-200 text-pale-sky-300"
                         }`}
                       />
                     </button>
@@ -298,7 +301,7 @@ export default function StoryDetailPage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                   Commentaire (optionnel)
                 </label>
                 <textarea
@@ -306,7 +309,7 @@ export default function StoryDetailPage() {
                   onChange={(e) => setComment(e.target.value)}
                   rows={4}
                   maxLength={1000}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-pale-sky-300 rounded-md focus:outline-none focus:ring-cherry-rose-500 focus:border-cherry-rose-500"
                   placeholder="Qu'avez-vous pensé de cette histoire ?"
                 />
               </div>
@@ -314,7 +317,7 @@ export default function StoryDetailPage() {
               <button
                 type="submit"
                 disabled={reviewLoading}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400"
+                className="bg-cherry-rose-500 text-white px-4 py-2 rounded-md hover:bg-cherry-rose-600 disabled:bg-coffee-bean-400"
               >
                 {reviewLoading ? "Envoi..." : "Publier mon avis"}
               </button>
@@ -323,7 +326,7 @@ export default function StoryDetailPage() {
 
           {/* Liste des avis */}
           {reviews.length === 0 ? (
-            <p className="text-gray-600 text-center py-8">
+            <p className="text-coffee-bean-600 text-center py-8">
               Aucun avis pour le moment. Soyez le premier !
             </p>
           ) : (
@@ -331,12 +334,12 @@ export default function StoryDetailPage() {
               {reviews.map((review) => (
                 <div
                   key={review.id}
-                  className="border-b border-gray-200 pb-4 last:border-b-0"
+                  className="border-b border-pale-sky-200 pb-4 last:border-b-0"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="font-bold text-gray-900 text-base">
+                        <span className="font-bold text-coffee-bean-900 text-base">
                           {review.pseudo || "Utilisateur inconnu"}
                         </span>
                         <div className="flex gap-0.5">
@@ -346,17 +349,19 @@ export default function StoryDetailPage() {
                               className={`w-5 h-5 ${
                                 i < review.rating
                                   ? "fill-yellow-400 text-yellow-400"
-                                  : "fill-gray-200 text-gray-300"
+                                  : "fill-pale-sky-200 text-pale-sky-300"
                               }`}
                             />
                           ))}
                         </div>
                       </div>
                       {review.comment && (
-                        <p className="text-gray-700 mt-2">{review.comment}</p>
+                        <p className="text-coffee-bean-700 mt-2">
+                          {review.comment}
+                        </p>
                       )}
                     </div>
-                    <span className="text-sm text-gray-500 ml-4 flex-shrink-0">
+                    <span className="text-sm text-coffee-bean-500 ml-4 flex-shrink-0">
                       {new Date(review.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -373,12 +378,12 @@ export default function StoryDetailPage() {
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-coffee-bean-900">
                   Signaler cette histoire
                 </h2>
                 <button
                   onClick={() => setShowReportModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-coffee-bean-400 hover:text-coffee-bean-600"
                 >
                   <X size={24} />
                 </button>
@@ -386,7 +391,7 @@ export default function StoryDetailPage() {
 
               <form onSubmit={handleSubmitReport}>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                     Raison du signalement *
                   </label>
                   <textarea
@@ -394,11 +399,11 @@ export default function StoryDetailPage() {
                     rows={4}
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     placeholder="Ex: Contenu inapproprié, violence, etc."
                     maxLength={500}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-coffee-bean-500 mt-1">
                     {reportReason.length}/500 caractères
                   </p>
                 </div>
@@ -407,7 +412,7 @@ export default function StoryDetailPage() {
                   <button
                     type="button"
                     onClick={() => setShowReportModal(false)}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
+                    className="flex-1 bg-pale-sky-200 text-coffee-bean-700 py-2 rounded-lg hover:bg-pale-sky-300"
                     disabled={reportLoading}
                   >
                     Annuler

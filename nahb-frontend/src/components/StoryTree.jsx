@@ -158,14 +158,14 @@ export default function StoryTree({ pages, startPageId, onPageSelect }) {
 
   if (!pages || pages.length === 0) {
     return (
-      <div className="h-96 flex items-center justify-center bg-gray-100 rounded-lg">
-        <p className="text-gray-500">Aucune page à afficher</p>
+      <div className="h-96 flex items-center justify-center bg-pale-sky-100 rounded-lg">
+        <p className="text-coffee-bean-500">Aucune page à afficher</p>
       </div>
     );
   }
 
   return (
-    <div className="h-[500px] border border-gray-200 rounded-lg overflow-hidden">
+    <div className="h-[500px] border border-pale-sky-200 rounded-lg overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}

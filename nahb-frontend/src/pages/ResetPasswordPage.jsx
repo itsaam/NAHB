@@ -59,13 +59,13 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 bg-seaweed-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-seaweed-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-coffee-bean-900 mb-4">
             Mot de passe réinitialisé ! ✅
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-coffee-bean-600 mb-6">
             Votre mot de passe a été modifié avec succès. Vous allez être
             redirigé vers la page de connexion...
           </p>
@@ -78,27 +78,27 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-coffee-bean-900 mb-2">
             Nouveau mot de passe 🔐
           </h1>
-          <p className="text-gray-600">
+          <p className="text-coffee-bean-600">
             Choisissez un nouveau mot de passe sécurisé
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
               Nouveau mot de passe
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-coffee-bean-400" />
               <input
                 type={showPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Minimum 6 caractères"
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-12 py-3 border border-pale-sky-300 rounded-lg focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                 disabled={loading}
                 required
                 minLength={6}
@@ -106,7 +106,7 @@ export default function ResetPasswordPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-coffee-bean-400 hover:text-coffee-bean-600"
               >
                 {showPassword ? (
                   <EyeOff className="w-5 h-5" />
@@ -118,17 +118,17 @@ export default function ResetPasswordPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
               Confirmer le mot de passe
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-coffee-bean-400" />
               <input
                 type={showPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirmez le mot de passe"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-pale-sky-300 rounded-lg focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                 disabled={loading}
                 required
                 minLength={6}
@@ -139,7 +139,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-cherry-rose-500 text-white py-3 rounded-lg hover:bg-cherry-rose-600 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Réinitialisation..." : "Réinitialiser le mot de passe"}
           </button>

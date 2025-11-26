@@ -186,26 +186,26 @@ export default function StoryEditorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-pale-sky-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-coffee-bean-900">
                 {story?.title}
               </h1>
-              <p className="text-gray-600 mt-1">Éditeur de pages</p>
+              <p className="text-coffee-bean-600 mt-1">Éditeur de pages</p>
             </div>
             <div className="flex items-center gap-3">
               {/* Toggle Vue */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className="flex bg-pale-sky-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode("list")}
                   className={`px-3 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
                     viewMode === "list"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-white text-coffee-bean-900 shadow-sm"
+                      : "text-coffee-bean-600 hover:text-coffee-bean-900"
                   }`}
                 >
                   <List size={18} />
@@ -215,8 +215,8 @@ export default function StoryEditorPage() {
                   onClick={() => setViewMode("tree")}
                   className={`px-3 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
                     viewMode === "tree"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-white text-coffee-bean-900 shadow-sm"
+                      : "text-coffee-bean-600 hover:text-coffee-bean-900"
                   }`}
                 >
                   <GitBranch size={18} />
@@ -225,7 +225,7 @@ export default function StoryEditorPage() {
               </div>
               <button
                 onClick={() => setShowCreatePageModal(true)}
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold flex items-center gap-2"
+                className="bg-cherry-rose-500 text-white px-6 py-3 rounded-lg hover:bg-cherry-rose-600 font-semibold flex items-center gap-2"
               >
                 <Plus size={20} /> Nouvelle page
               </button>
@@ -252,9 +252,9 @@ export default function StoryEditorPage() {
             />
 
             {/* Légende */}
-            <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
+            <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-pale-sky-200 text-sm text-coffee-bean-600">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-green-500"></div>
+                <div className="w-4 h-4 rounded bg-seaweed-500"></div>
                 <span>Page de départ</span>
               </div>
               <div className="flex items-center gap-2">
@@ -281,25 +281,25 @@ export default function StoryEditorPage() {
                 key={page._id}
                 className={`bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex flex-col ${
                   story?.startPageId === page._id
-                    ? "ring-2 ring-indigo-500"
+                    ? "ring-2 ring-cherry-rose-500"
                     : ""
                 }`}
               >
                 <div className="p-6 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-4 gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-500 mb-2">
+                      <p className="text-sm text-coffee-bean-500 mb-2">
                         ID: {page._id.substring(0, 8)}...
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {story?.startPageId === page._id && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-cherry-rose-100 text-cherry-rose-700 rounded">
                             <Play size={12} fill="currentColor" />
                             Départ
                           </span>
                         )}
                         {page.isEnd && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded max-w-full overflow-hidden">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-seaweed-100 text-seaweed-800 rounded max-w-full overflow-hidden">
                             <Flag size={14} className="shrink-0" />
                             <span className="truncate">
                               Fin: {page.endLabel || "Fin"}
@@ -316,7 +316,7 @@ export default function StoryEditorPage() {
                     </button>
                   </div>
 
-                  <p className="text-gray-700 mb-4 line-clamp-3">
+                  <p className="text-coffee-bean-700 mb-4 line-clamp-3">
                     {page.content}
                   </p>
 
@@ -330,15 +330,15 @@ export default function StoryEditorPage() {
 
                   {/* Choix */}
                   <div className="border-t pt-4 flex-1">
-                    <p className="text-sm font-semibold text-gray-700 mb-2">
+                    <p className="text-sm font-semibold text-coffee-bean-700 mb-2">
                       Choix ({page.choices?.length || 0}) :
                     </p>
                     {page.choices?.map((choice) => (
                       <div
                         key={choice._id}
-                        className="flex items-center justify-between bg-gray-50 p-2 rounded mb-2"
+                        className="flex items-center justify-between bg-pale-sky-50 p-2 rounded mb-2"
                       >
-                        <span className="text-sm text-gray-700 flex-1 flex items-center gap-2">
+                        <span className="text-sm text-coffee-bean-700 flex-1 flex items-center gap-2">
                           {choice.diceRequired && (
                             <span
                               className="text-orange-500"
@@ -362,7 +362,7 @@ export default function StoryEditorPage() {
                     {!page.isEnd && (
                       <button
                         onClick={() => openAddChoice(page)}
-                        className="text-sm text-indigo-600 hover:text-indigo-800 mt-2 flex items-center gap-1"
+                        className="text-sm text-cherry-rose-500 hover:text-cherry-rose-700 mt-2 flex items-center gap-1"
                       >
                         <Plus size={16} /> Ajouter un choix
                       </button>
@@ -373,14 +373,14 @@ export default function StoryEditorPage() {
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => openEditPage(page)}
-                      className="flex-1 bg-gray-100 text-gray-700 py-2 rounded hover:bg-gray-200 flex items-center justify-center gap-2"
+                      className="flex-1 bg-pale-sky-100 text-coffee-bean-700 py-2 rounded hover:bg-pale-sky-200 flex items-center justify-center gap-2"
                     >
                       <Pencil size={16} /> Modifier
                     </button>
                     {story?.startPageId !== page._id && !page.isEnd && (
                       <button
                         onClick={() => handleSetStartPage(page._id)}
-                        className="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded hover:bg-indigo-200 flex items-center justify-center gap-2"
+                        className="flex-1 bg-cherry-rose-100 text-cherry-rose-600 py-2 rounded hover:bg-cherry-rose-200 flex items-center justify-center gap-2"
                         title="Définir comme page de départ"
                       >
                         <Play size={16} /> Départ
@@ -392,7 +392,7 @@ export default function StoryEditorPage() {
             ))}
 
             {pages.length === 0 && (
-              <div className="col-span-full text-center py-12 text-gray-500">
+              <div className="col-span-full text-center py-12 text-coffee-bean-500">
                 Aucune page. Créez la première page de votre histoire !
               </div>
             )}
@@ -408,7 +408,7 @@ export default function StoryEditorPage() {
                 <form onSubmit={handleCreatePage}>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                         Contenu de la page * (min 10, max 10 000 caractères)
                       </label>
                       <textarea
@@ -420,16 +420,16 @@ export default function StoryEditorPage() {
                         onChange={(e) =>
                           setPageForm({ ...pageForm, content: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg focus:ring-2 focus:ring-cherry-rose-500"
                         placeholder="Racontez ce qui se passe..."
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-coffee-bean-500 mt-1">
                         {pageForm.content.length}/10 000 caractères
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                         URL de l'illustration (optionnel)
                       </label>
                       <input
@@ -441,7 +441,7 @@ export default function StoryEditorPage() {
                             illustration: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                         placeholder="https://..."
                       />
                     </div>
@@ -456,14 +456,14 @@ export default function StoryEditorPage() {
                         }
                         className="rounded"
                       />
-                      <label htmlFor="isEnd" className="text-sm text-gray-700">
+                      <label htmlFor="isEnd" className="text-sm text-coffee-bean-700">
                         Cette page est une fin
                       </label>
                     </div>
 
                     {pageForm.isEnd && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                           Label de la fin (max 100 caractères)
                         </label>
                         <input
@@ -477,10 +477,10 @@ export default function StoryEditorPage() {
                               endLabel: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                           placeholder="Fin heureuse, Fin tragique..."
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-coffee-bean-500 mt-1">
                           {pageForm.endLabel.length}/100 caractères
                         </p>
                       </div>
@@ -491,13 +491,13 @@ export default function StoryEditorPage() {
                     <button
                       type="button"
                       onClick={() => setShowCreatePageModal(false)}
-                      className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300"
+                      className="flex-1 bg-pale-sky-200 text-coffee-bean-700 py-3 rounded-lg hover:bg-pale-sky-300"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700"
+                      className="flex-1 bg-cherry-rose-500 text-white py-3 rounded-lg hover:bg-cherry-rose-600"
                     >
                       Créer la page
                     </button>
@@ -517,7 +517,7 @@ export default function StoryEditorPage() {
                 <form onSubmit={handleUpdatePage}>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                         Contenu * (min 10, max 10 000 caractères)
                       </label>
                       <textarea
@@ -529,15 +529,15 @@ export default function StoryEditorPage() {
                         onChange={(e) =>
                           setPageForm({ ...pageForm, content: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-coffee-bean-500 mt-1">
                         {pageForm.content.length}/10 000 caractères
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                         Illustration
                       </label>
                       <input
@@ -549,7 +549,7 @@ export default function StoryEditorPage() {
                             illustration: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                       />
                     </div>
 
@@ -567,7 +567,7 @@ export default function StoryEditorPage() {
 
                     {pageForm.isEnd && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                           Label de la fin (max 100 caractères)
                         </label>
                         <input
@@ -582,9 +582,9 @@ export default function StoryEditorPage() {
                             })
                           }
                           placeholder="Label de fin"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-coffee-bean-500 mt-1">
                           {pageForm.endLabel.length}/100 caractères
                         </p>
                       </div>
@@ -595,13 +595,13 @@ export default function StoryEditorPage() {
                     <button
                       type="button"
                       onClick={() => setShowEditPageModal(false)}
-                      className="flex-1 bg-gray-200 py-3 rounded-lg"
+                      className="flex-1 bg-pale-sky-200 py-3 rounded-lg"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-indigo-600 text-white py-3 rounded-lg"
+                      className="flex-1 bg-cherry-rose-500 text-white py-3 rounded-lg"
                     >
                       Enregistrer
                     </button>
@@ -621,7 +621,7 @@ export default function StoryEditorPage() {
                 <form onSubmit={handleAddChoice}>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                         Texte du choix *
                       </label>
                       <input
@@ -631,13 +631,13 @@ export default function StoryEditorPage() {
                         onChange={(e) =>
                           setChoiceForm({ ...choiceForm, text: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                         placeholder="Aller à gauche, Parler au garde..."
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                         Page de destination (succès) *
                       </label>
                       <select
@@ -649,7 +649,7 @@ export default function StoryEditorPage() {
                             targetPageId: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                       >
                         <option value="">-- Sélectionner une page --</option>
                         {pages
@@ -675,9 +675,9 @@ export default function StoryEditorPage() {
                               diceRequired: e.target.checked,
                             })
                           }
-                          className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          className="w-5 h-5 rounded border-pale-sky-300 text-cherry-rose-500 focus:ring-cherry-rose-500"
                         />
-                        <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <span className="flex items-center gap-2 text-sm font-medium text-coffee-bean-700">
                           <Dice6 size={20} className="text-orange-500" />
                           Ajouter un jet de dé
                         </span>
@@ -686,7 +686,7 @@ export default function StoryEditorPage() {
                       {choiceForm.diceRequired && (
                         <div className="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200 space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                               🎲 Valeur minimum pour réussir (1-20)
                             </label>
                             <input
@@ -700,16 +700,16 @@ export default function StoryEditorPage() {
                                   diceThreshold: parseInt(e.target.value) || 10,
                                 })
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-coffee-bean-500 mt-1">
                               Le joueur devra faire {choiceForm.diceThreshold}{" "}
                               ou plus sur un dé 20
                             </p>
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
                               ❌ Page en cas d'échec
                             </label>
                             <select
@@ -720,7 +720,7 @@ export default function StoryEditorPage() {
                                   failurePageId: e.target.value,
                                 })
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
                             >
                               <option value="">
                                 -- Rester sur la page actuelle --
@@ -744,13 +744,13 @@ export default function StoryEditorPage() {
                     <button
                       type="button"
                       onClick={() => setShowAddChoiceModal(false)}
-                      className="flex-1 bg-gray-200 py-3 rounded-lg"
+                      className="flex-1 bg-pale-sky-200 py-3 rounded-lg"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-indigo-600 text-white py-3 rounded-lg"
+                      className="flex-1 bg-cherry-rose-500 text-white py-3 rounded-lg"
                     >
                       Ajouter
                     </button>

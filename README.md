@@ -1,6 +1,6 @@
 # 📚 NAHB - Not Another Hero's Book
 
-![NAHB Banner](./nahb-database-schemas/MongoDB%20-%20Schéma%20Mermaid-2025-11-24-084911.png)
+![NAHB Banner](./nahb-frontend/public/og-image.jpg)
 
 **Plateforme web fullstack de création et de lecture d'histoires interactives de type "livre dont vous êtes le héros"**
 
@@ -56,14 +56,35 @@ NAHB est une application web moderne permettant de créer, publier et jouer à d
 - **Axios** (requêtes API)
 - **Tailwind CSS** (styling moderne)
 - **Lucide React** (icônes)
-- **Material-UI** (composants auth)
 
-### Design
+### 🎨 Design & Palette de couleurs
 
-- Style : **Moderne, épuré, blanc**
-- Dark mode avec thème sombre
-- Design system cohérent
-- Responsive et accessible
+Le site utilise une palette de couleurs personnalisée définie dans `nahb-frontend/src/index.css` :
+
+| Couleur         | Code HEX              | Utilisation                                                               |
+| --------------- | --------------------- | ------------------------------------------------------------------------- |
+| **Cherry Rose** | `#d42b55`             | Couleur principale - Boutons, CTAs, liens actifs, éléments d'accentuation |
+| **Pale Sky**    | `#edf2f8` → `#0e1a25` | Fonds de page, bordures, éléments secondaires                             |
+| **Coffee Bean** | `#1c1718` → `#f3f1f2` | Textes (titres, paragraphes, labels)                                      |
+| **Neon Ice**    | `#03fcf0`             | Accents, badges spéciaux (ex: admin), éléments de mise en avant           |
+| **Seaweed**     | `#00ffd5`             | États de succès, validations, messages positifs                           |
+
+#### Classes Tailwind personnalisées
+
+```css
+/* Exemples d'utilisation */
+bg-cherry-rose-500    /* Fond bouton principal */
+text-coffee-bean-900  /* Texte foncé */
+border-pale-sky-300   /* Bordure légère */
+bg-neon-ice-500       /* Badge accent */
+text-seaweed-600      /* Message succès */
+```
+
+#### Principes de design
+
+- **Style** : Moderne, épuré, fond clair
+- **Responsive** : Adapté mobile, tablette et desktop
+- **Accessible** : Contrastes respectés, navigation clavier
 
 ---
 
@@ -343,18 +364,17 @@ NAHB/
 ### Palette de couleurs
 
 ```css
-Background:    #FFFFFF (blanc)
-Foreground:    #1C2025 (texte principal)
-Primary:       #6366F1 (indigo/violet)
-Accent:        #FF8A00 (orange)
-Secondary:     #F5F5F5 (gris clair)
-Border:        #E5E7EB (bordures subtiles)
+Cherry Rose:   #d42b55 (couleur principale - boutons, CTAs)
+Pale Sky:      #edf2f8 → #0e1a25 (fonds, bordures)
+Coffee Bean:   #1c1718 → #f3f1f2 (textes)
+Neon Ice:      #03fcf0 (accents, badges)
+Seaweed:       #00ffd5 (succès, validations)
 Destructive:   #EF4444 (rouge erreur)
 ```
 
 ### Interface
 
-- Design épuré et moderne, fond blanc
+- Design épuré et moderne, fond clair (Pale Sky)
 - Composants UI réutilisables (inspirés shadcn/ui)
 - Icônes Lucide React pour cohérence cross-platform
 - Animations et transitions fluides
@@ -518,26 +538,18 @@ Obtenir les statistiques de parcours.
 
 ## 👥 Contributeurs
 
-- **Votre Nom** - Développement fullstack
+- [@itsaam](https://github.com/itsaam)
+- [@Mitikx](https://github.com/Mitikx)
+
+Étudiants à [Sup de Vinci](https://www.supdevinci.fr/)
+
+**Repository:** [github.com/itsaam/NAHB](https://github.com/itsaam/NAHB)
 
 ---
 
 ## 📝 Licence
 
-Ce projet est réalisé dans le cadre d'un projet académique.
-
----
-
-## 🎯 Fonctionnalités futures
-
-- [ ] Tests unitaires et d'intégration
-- [ ] Docker + docker-compose
-- [ ] Déploiement (Backend: Railway, Frontend: Vercel)
-- [ ] Visualisation d'arbre des histoires
-- [ ] Mode preview auteur
-- [ ] Système de badges et achievements
-- [ ] Illustrations interactives
-- [ ] Système de jets de dés (hasard)
+Ce projet est réalisé dans le cadre d'un projet académique à [Sup de Vinci](https://www.supdevinci.fr/).
 
 ---
 
@@ -546,7 +558,6 @@ Ce projet est réalisé dans le cadre d'un projet académique.
 Pour toute question ou problème :
 
 - Créer une issue sur le repository
-- Contacter l'équipe de développement
 
 ---
 

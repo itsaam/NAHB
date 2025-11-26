@@ -1,16 +1,83 @@
-# React + Vite
+# 🎨 NAHB Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface utilisateur React pour la plateforme NAHB (Not Another Hero's Book).
 
-Currently, two official plugins are available:
+## 🛠️ Technologies
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 18** + **Vite** (build rapide)
+- **Tailwind CSS** (styling)
+- **React Router** (navigation)
+- **Axios** (requêtes API)
+- **Lucide React** (icônes)
+- **React Flow** (visualisation arbre des histoires)
 
-## React Compiler
+## 🚀 Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+Le serveur de développement démarre sur `http://localhost:5173`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📦 Build
+
+```bash
+npm run build
+```
+
+Les fichiers de production sont générés dans le dossier `dist/`
+
+## 🎨 Palette de couleurs
+
+Le site utilise une palette personnalisée définie dans `src/index.css` :
+
+| Couleur         | Code HEX  | Utilisation                 |
+| --------------- | --------- | --------------------------- |
+| **Cherry Rose** | `#d42b55` | Boutons, CTAs, liens actifs |
+| **Pale Sky**    | `#edf2f8` | Fonds, bordures             |
+| **Coffee Bean** | `#1c1718` | Textes                      |
+| **Neon Ice**    | `#03fcf0` | Accents, badges             |
+| **Seaweed**     | `#00ffd5` | États de succès             |
+
+### Exemples d'utilisation
+
+```jsx
+// Bouton principal
+<button className="bg-cherry-rose-500 text-white hover:bg-cherry-rose-600">
+  Action
+</button>
+
+// Texte
+<p className="text-coffee-bean-900">Contenu</p>
+
+// Fond de page
+<div className="bg-pale-sky-50">...</div>
+
+// Badge accent
+<span className="bg-neon-ice-500 text-neon-ice-900">Admin</span>
+
+// Message succès
+<p className="text-seaweed-600">Sauvegardé !</p>
+```
+
+## 📁 Structure
+
+```
+src/
+├── components/     # Composants réutilisables (Navbar, etc.)
+├── context/        # Contextes React (Auth, etc.)
+├── hooks/          # Hooks personnalisés
+├── lib/            # Utilitaires
+├── pages/          # Pages de l'application
+├── services/       # Services API
+└── index.css       # Styles globaux + palette couleurs
+```
+
+## 🔗 Variables d'environnement
+
+Créer un fichier `.env` :
+
+```env
+VITE_API_URL=http://localhost:3002/api
+```

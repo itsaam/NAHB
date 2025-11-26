@@ -542,9 +542,9 @@ export default function AdminDashboard() {
                                 <span
                                   className={`inline-flex items-center rounded-full mt-2 px-2.5 py-0.5 text-xs font-semibold ${
                                     report.status === "pending"
-                                      ? "bg-yellow-100 text-yellow-800"
+                                      ? "bg-coffee-bean-100 text-coffee-bean-700"
                                       : report.status === "resolved"
-                                      ? "bg-green-100 text-green-800"
+                                      ? "bg-seaweed-100 text-seaweed-800"
                                       : "bg-red-100 text-red-800"
                                   }`}
                                 >
@@ -758,13 +758,13 @@ export default function AdminDashboard() {
       {showImageModal && selectedTheme && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
+            <h2 className="text-xl font-bold mb-4 text-coffee-bean-900">
               Ajouter une image à "{selectedTheme.name}"
             </h2>
             <form onSubmit={handleAddImage}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                  <label className="block text-sm font-medium mb-2 text-coffee-bean-700">
                     URL de l'image *
                   </label>
                   <input
@@ -774,12 +774,12 @@ export default function AdminDashboard() {
                     onChange={(e) =>
                       setImageForm({ ...imageForm, image_url: e.target.value })
                     }
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                     placeholder="https://..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                  <label className="block text-sm font-medium mb-2 text-coffee-bean-700">
                     Texte alternatif
                   </label>
                   <input
@@ -788,12 +788,12 @@ export default function AdminDashboard() {
                     onChange={(e) =>
                       setImageForm({ ...imageForm, alt_text: e.target.value })
                     }
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                     placeholder="Description de l'image"
                   />
                 </div>
                 {imageForm.image_url && (
-                  <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video">
+                  <div className="rounded-lg overflow-hidden bg-pale-sky-100 aspect-video">
                     <img
                       src={imageForm.image_url}
                       alt="Aperçu"
@@ -812,13 +812,13 @@ export default function AdminDashboard() {
                     setShowImageModal(false);
                     setSelectedTheme(null);
                   }}
-                  className="flex-1 h-10 px-4 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex-1 h-10 px-4 rounded-md border border-pale-sky-300 bg-white text-coffee-bean-700 hover:bg-pale-sky-50 transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-10 px-4 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  className="flex-1 h-10 px-4 rounded-md bg-cherry-rose-500 text-white hover:bg-cherry-rose-600 transition-colors"
                 >
                   Ajouter
                 </button>

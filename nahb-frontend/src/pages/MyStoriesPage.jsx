@@ -209,8 +209,8 @@ export default function MyStoriesPage() {
                       <span
                         className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold ${
                           story.status === "publié"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
+                            ? "bg-seaweed-100 text-seaweed-800"
+                            : "bg-coffee-bean-100 text-coffee-bean-700"
                         }`}
                       >
                         {story.status}
@@ -264,7 +264,7 @@ export default function MyStoriesPage() {
                       {story.status === "brouillon" ? (
                         <button
                           onClick={() => handlePublish(story._id, story.title)}
-                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-seaweed-600 text-white hover:bg-seaweed-700 transition-colors"
                         >
                           📢 Publier
                         </button>
@@ -273,7 +273,7 @@ export default function MyStoriesPage() {
                           onClick={() =>
                             handleUnpublish(story._id, story.title)
                           }
-                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-yellow-600 text-white hover:bg-yellow-700 transition-colors"
+                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-coffee-bean-500 text-white hover:bg-coffee-bean-600 transition-colors"
                         >
                           📝 Retirer de la publication
                         </button>
@@ -320,7 +320,7 @@ export default function MyStoriesPage() {
                     onChange={(e) =>
                       setNewStory({ ...newStory, title: e.target.value })
                     }
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 placeholder:text-coffee-bean-400 focus:outline-none focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                   />
                 </div>
 
@@ -339,7 +339,7 @@ export default function MyStoriesPage() {
                     onChange={(e) =>
                       setNewStory({ ...newStory, description: e.target.value })
                     }
-                    className="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px]"
+                    className="flex w-full rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 placeholder:text-coffee-bean-400 focus:outline-none focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent min-h-[120px]"
                   />
                 </div>
 
@@ -354,7 +354,7 @@ export default function MyStoriesPage() {
                     id="theme"
                     value={newStory.theme}
                     onChange={(e) => handleThemeChange(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 focus:outline-none focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                   >
                     <option value="">Choisir un thème</option>
                     {themes.map((theme) => (
@@ -378,7 +378,7 @@ export default function MyStoriesPage() {
                       onChange={(e) =>
                         setNewStory({ ...newStory, coverImage: e.target.value })
                       }
-                      className="flex h-10 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex h-10 flex-1 rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 placeholder:text-coffee-bean-400 focus:outline-none focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                     />
                     <button
                       type="button"
@@ -386,7 +386,7 @@ export default function MyStoriesPage() {
                       disabled={
                         !newStory.theme || selectedThemeImages.length === 0
                       }
-                      className="inline-flex items-center justify-center h-10 px-4 rounded-md text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center justify-center h-10 px-4 rounded-md text-sm font-medium bg-neon-ice-600 text-white hover:bg-neon-ice-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Images className="h-4 w-4 mr-2" />
                       Catalogue
@@ -424,7 +424,7 @@ export default function MyStoriesPage() {
                     onChange={(e) =>
                       setNewStory({ ...newStory, tags: e.target.value })
                     }
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 placeholder:text-coffee-bean-400 focus:outline-none focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                   />
                   <p className="text-xs text-muted-foreground">
                     Séparez les tags par des virgules
@@ -444,7 +444,7 @@ export default function MyStoriesPage() {
                     onChange={(e) =>
                       setNewStory({ ...newStory, status: e.target.value })
                     }
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-pale-sky-300 bg-white px-3 py-2 text-sm text-coffee-bean-900 focus:outline-none focus:ring-2 focus:ring-cherry-rose-500 focus:border-transparent"
                   >
                     <option value="brouillon">Brouillon</option>
                     <option value="publié">Publié</option>
@@ -461,7 +461,7 @@ export default function MyStoriesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 inline-flex items-center justify-center h-10 rounded-md px-4 text-sm font-medium bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 hover:border-blue-700 transition-colors"
+                    className="flex-1 inline-flex items-center justify-center h-10 rounded-md px-4 text-sm font-medium bg-cherry-rose-500 text-white border border-cherry-rose-500 hover:bg-cherry-rose-600 hover:border-cherry-rose-600 transition-colors"
                   >
                     Créer
                   </button>
@@ -483,14 +483,14 @@ export default function MyStoriesPage() {
               </h3>
               <button
                 onClick={() => setShowImageCatalog(false)}
-                className="p-2 hover:bg-gray-100 rounded-full"
+                className="p-2 hover:bg-pale-sky-100 rounded-full"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
               {selectedThemeImages.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
+                <p className="text-center text-coffee-bean-500 py-8">
                   Aucune image disponible pour ce thème
                 </p>
               ) : (
@@ -501,8 +501,8 @@ export default function MyStoriesPage() {
                       onClick={() => handleSelectImage(image.image_url)}
                       className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
                         newStory.coverImage === image.image_url
-                          ? "border-purple-600 ring-2 ring-purple-300"
-                          : "border-gray-200 hover:border-purple-400"
+                          ? "border-neon-ice-600 ring-2 ring-neon-ice-300"
+                          : "border-pale-sky-200 hover:border-neon-ice-400"
                       }`}
                     >
                       <img
@@ -516,7 +516,7 @@ export default function MyStoriesPage() {
                         </div>
                       )}
                       {newStory.coverImage === image.image_url && (
-                        <div className="absolute top-2 right-2 bg-purple-600 text-white rounded-full p-1">
+                        <div className="absolute top-2 right-2 bg-neon-ice-600 text-white rounded-full p-1">
                           <svg
                             className="w-4 h-4"
                             fill="none"

@@ -190,7 +190,7 @@ export default function ReadStoryPage() {
   if (loading && !currentPage) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Chargement...</p>
+        <p className="text-coffee-bean-600">Chargement...</p>
       </div>
     );
   }
@@ -202,7 +202,7 @@ export default function ReadStoryPage() {
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => navigate("/stories")}
-            className="text-indigo-600 hover:text-indigo-800"
+            className="text-cherry-rose-500 hover:text-cherry-rose-700"
           >
             Retour aux histoires
           </button>
@@ -214,13 +214,13 @@ export default function ReadStoryPage() {
   if (!currentPage) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Aucune page à afficher</p>
+        <p className="text-coffee-bean-600">Aucune page à afficher</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-pale-sky-50 py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Fins débloquées */}
         {unlockedEndings.length > 0 && (
@@ -232,7 +232,7 @@ export default function ReadStoryPage() {
               {unlockedEndings.map((ending, index) => (
                 <span
                   key={index}
-                  className="bg-white px-3 py-1 rounded-full text-sm font-medium text-gray-900"
+                  className="bg-white px-3 py-1 rounded-full text-sm font-medium text-coffee-bean-900"
                 >
                   {ending.endLabel || `Fin ${index + 1}`}
                 </span>
@@ -253,9 +253,9 @@ export default function ReadStoryPage() {
         )}
 
         {/* Contenu de la page */}
-        <div className="bg-white rounded-lg p-8 shadow-lg mb-8 border border-gray-200">
+        <div className="bg-white rounded-lg p-8 shadow-lg mb-8 border border-pale-sky-200">
           <div className="prose max-w-none">
-            <p className="text-lg leading-relaxed whitespace-pre-line text-gray-900">
+            <p className="text-lg leading-relaxed whitespace-pre-line text-coffee-bean-900">
               {currentPage.content}
             </p>
           </div>
@@ -263,41 +263,45 @@ export default function ReadStoryPage() {
 
         {/* Fin de l'histoire */}
         {isCompleted || currentPage.isEnd ? (
-          <div className="bg-white rounded-lg p-8 text-center shadow-lg border border-indigo-200">
-            <h2 className="text-3xl font-bold mb-4 text-gray-900">
+          <div className="bg-white rounded-lg p-8 text-center shadow-lg border border-cherry-rose-200">
+            <h2 className="text-3xl font-bold mb-4 text-coffee-bean-900">
               🎉 {currentPage.endLabel || "Fin"}
             </h2>
-            <p className="text-lg mb-6 text-gray-700">
+            <p className="text-lg mb-6 text-coffee-bean-700">
               Vous avez terminé cette histoire !
             </p>
 
             {/* Statistiques de parcours */}
             {pathStats && (
-              <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
-                <p className="text-lg font-bold mb-3 text-gray-900">
+              <div className="bg-pale-sky-50 rounded-lg p-4 mb-6 border border-pale-sky-200">
+                <p className="text-lg font-bold mb-3 text-coffee-bean-900">
                   📊 Statistiques de parcours
                 </p>
 
                 <div className="space-y-3">
                   {/* Similarité du chemin */}
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <p className="text-sm mb-1 text-gray-600">🚶 Chemin pris</p>
-                    <p className="text-2xl font-bold text-indigo-600">
+                  <div className="bg-white rounded-lg p-3 border border-pale-sky-200">
+                    <p className="text-sm mb-1 text-coffee-bean-600">
+                      🚶 Chemin pris
+                    </p>
+                    <p className="text-2xl font-bold text-cherry-rose-500">
                       {pathStats.pathSimilarity}% des joueurs
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-coffee-bean-500 mt-1">
                       ont pris un chemin similaire au tien
                     </p>
                   </div>
 
                   {/* Stats de la fin */}
                   {pathStats.endStats && (
-                    <div className="bg-white rounded-lg p-3 border border-gray-200">
-                      <p className="text-sm mb-1 text-gray-600">🏁 Cette fin</p>
-                      <p className="text-2xl font-bold text-green-600">
+                    <div className="bg-white rounded-lg p-3 border border-pale-sky-200">
+                      <p className="text-sm mb-1 text-coffee-bean-600">
+                        🏁 Cette fin
+                      </p>
+                      <p className="text-2xl font-bold text-seaweed-600">
                         {pathStats.endStats.percentage}% des joueurs
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-coffee-bean-500 mt-1">
                         ont atteint cette fin ({pathStats.endStats.timesReached}{" "}
                         fois)
                       </p>
@@ -309,8 +313,8 @@ export default function ReadStoryPage() {
 
             {/* Statistiques des fins */}
             {unlockedEndings.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
-                <p className="text-sm mb-2 text-gray-700">
+              <div className="bg-pale-sky-50 rounded-lg p-4 mb-6 border border-pale-sky-200">
+                <p className="text-sm mb-2 text-coffee-bean-700">
                   🏆 Fins découvertes : {unlockedEndings.length}
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
@@ -329,7 +333,7 @@ export default function ReadStoryPage() {
             <div className="flex justify-center gap-4">
               <button
                 onClick={handleRestart}
-                className="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors"
+                className="bg-cherry-rose-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-cherry-rose-600 transition-colors"
               >
                 Retour aux histoires
               </button>
@@ -348,7 +352,7 @@ export default function ReadStoryPage() {
               </button>
             </div>
 
-            <h3 className="text-xl font-semibold mb-4 text-center text-gray-900">
+            <h3 className="text-xl font-semibold mb-4 text-center text-coffee-bean-900">
               Que faites-vous ?
             </h3>
             <div className="space-y-4">
@@ -358,9 +362,9 @@ export default function ReadStoryPage() {
                     key={choice._id || index}
                     onClick={() => onChoiceClick(choice)}
                     disabled={loading}
-                    className="w-full bg-white hover:bg-indigo-50 border-2 border-gray-200 hover:border-indigo-600 rounded-lg p-4 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="w-full bg-white hover:bg-cherry-rose-50 border-2 border-pale-sky-200 hover:border-cherry-rose-500 rounded-lg p-4 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
-                    <span className="text-lg font-medium text-gray-900">
+                    <span className="text-lg font-medium text-coffee-bean-900">
                       {choice.order !== undefined && `${choice.order + 1}. `}
                       {choice.text}
                     </span>
@@ -372,7 +376,7 @@ export default function ReadStoryPage() {
                   </button>
                 ))
               ) : (
-                <div className="text-center text-gray-500 bg-white rounded-lg p-4 border border-gray-200">
+                <div className="text-center text-coffee-bean-500 bg-white rounded-lg p-4 border border-pale-sky-200">
                   Aucun choix disponible
                 </div>
               )}
