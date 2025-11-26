@@ -549,6 +549,101 @@ const getUnlockedEndings = async (req, res) => {
   }
 };
 
+/**
+ * Récupérer les activités de l'utilisateur (histoires terminées et en cours)
+ */
+const getMyActivities = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    logger.info(`Récupération des activités de l'utilisateur ${userId}`);
+
+    // Récupérer toutes les sessions de l'utilisateur
+    const sessionsResult = await pool.query(
+      `SELECT 
+        gs.story_mongo_id,
+        gs.is_completed,
+        MAX(gs.id) as last_session_id,
+        MAX(gs.updated_at) as last_updated,
+        COUNT(DISTINCT gs.id) as total_sessions,
+        COUNT(DISTINCT CASE WHEN gs.is_completed = true THEN gs.end_page_mongo_id END) as unique_endings
+       FROM game_sessions gs
+       WHERE gs.user_id = $1
+       GROUP BY gs.story_mongo_id, gs.is_completed
+       ORDER BY MAX(gs.updated_at) DESC`,
+      [userId]
+    );
+
+    // Organiser les données par histoire
+    const storiesMap = {};
+
+    for (const row of sessionsResult.rows) {
+      const storyId = row.story_mongo_id;
+
+      if (!storiesMap[storyId]) {
+        storiesMap[storyId] = {
+          storyId: storyId,
+          completed: false,
+          inProgress: false,
+          endingsReached: 0,
+          lastSessionId: null,
+          lastUpdated: null,
+        };
+      }
+
+      if (row.is_completed) {
+        storiesMap[storyId].completed = true;
+        storiesMap[storyId].endingsReached = parseInt(row.unique_endings) || 0;
+      } else {
+        storiesMap[storyId].inProgress = true;
+        storiesMap[storyId].lastSessionId = row.last_session_id;
+        storiesMap[storyId].lastUpdated = row.last_updated;
+      }
+    }
+
+    // Récupérer les informations des histoires depuis MongoDB
+    const storyIds = Object.keys(storiesMap);
+    const stories = await Story.find({ _id: { $in: storyIds } }).select(
+      "_id title description theme"
+    );
+
+    // Construire la réponse
+    const activities = Object.values(storiesMap).map((activity) => {
+      const story = stories.find(
+        (s) => s._id.toString() === activity.storyId
+      );
+
+      return {
+        story: {
+          id: activity.storyId,
+          title: story?.title || "Histoire inconnue",
+          description: story?.description || "",
+          theme: story?.theme || "",
+        },
+        completed: activity.completed,
+        progress: activity.completed ? 100 : activity.inProgress ? 50 : 0,
+        endingsReached: activity.endingsReached,
+        lastSessionId: activity.lastSessionId,
+      };
+    });
+
+    logger.info(`${activities.length} activités trouvées pour ${userId}`);
+
+    return res.status(200).json({
+      success: true,
+      data: activities,
+    });
+  } catch (err) {
+    logger.error(
+      `Erreur lors de la récupération des activités : ${err.message}`
+    );
+    return res.status(500).json({
+      success: false,
+      error: "Erreur serveur lors de la récupération des activités.",
+    });
+  }
+};
+
 module.exports = {
   startGame,
   makeChoice,
@@ -556,4 +651,5 @@ module.exports = {
   getMySessions,
   getUnlockedEndings,
   getPathStats,
+  getMyActivities,
 };

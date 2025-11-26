@@ -67,6 +67,28 @@ export default function MyStoriesPage() {
     }
   };
 
+  const handlePublish = async (id, title) => {
+    if (!confirm(`Publier "${title}" ? Elle sera visible par tous les lecteurs.`)) return;
+    try {
+      await storiesAPI.update(id, { status: "publié" });
+      loadMyStories();
+      alert("Histoire publiée avec succès !");
+    } catch (err) {
+      alert(err.response?.data?.error || "Erreur lors de la publication");
+    }
+  };
+
+  const handleUnpublish = async (id, title) => {
+    if (!confirm(`Retirer "${title}" de la publication ? Elle redeviendra un brouillon.`)) return;
+    try {
+      await storiesAPI.update(id, { status: "brouillon" });
+      loadMyStories();
+      alert("Histoire remise en brouillon");
+    } catch (err) {
+      alert(err.response?.data?.error || "Erreur");
+    }
+  };
+
   if (loading)
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -165,20 +187,38 @@ export default function MyStoriesPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-2">
-                      <Link
-                        to={`/story/${story._id}/edit`}
-                        className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Éditer
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(story._id, story.title)}
-                        className="inline-flex items-center justify-center h-10 w-10 rounded-md text-sm font-medium bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                    <div className="flex flex-col gap-2 pt-2">
+                      <div className="flex gap-2">
+                        <Link
+                          to={`/story/${story._id}/edit`}
+                          className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Éditer
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(story._id, story.title)}
+                          className="inline-flex items-center justify-center h-10 w-10 rounded-md text-sm font-medium bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {story.status === "brouillon" ? (
+                        <button
+                          onClick={() => handlePublish(story._id, story.title)}
+                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        >
+                          📢 Publier
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUnpublish(story._id, story.title)}
+                          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium bg-yellow-600 text-white hover:bg-yellow-700 transition-colors"
+                        >
+                          📝 Retirer de la publication
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -6,6 +6,23 @@ export default function HomePage() {
   const { user } = useAuth();
 
   return (
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Hero Section */}
+        <div className="text-center">
+          <h1 className="text-5xl font-extrabold text-gray-900 sm:text-6xl md:text-7xl">
+            <span className="block">Bienvenue sur</span>
+            <span className="block text-indigo-600"> NAHB</span>
+          </h1>
+          <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+            Narratives Aventureuses Hypertextuelles Branchées
+          </p>
+          <p className="mt-3 max-w-md mx-auto text-base text-gray-600 sm:text-lg md:max-w-3xl">
+            Plongez dans des histoires interactives où chaque choix compte.
+            Lisez, créez et partagez vos aventures !
+          </p>
+        </div>
+
     <div className="min-h-screen bg-background">
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
         {/* Background gradient */}
