@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { storiesAPI, pagesAPI } from "../services/api";
-import { Plus, Pencil, Trash2, X, Flag, Dice6, Play } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Flag, Dice6, Play, GitBranch, List } from "lucide-react";
+import StoryTree from "../components/StoryTree";
 
 export default function StoryEditorPage() {
   const { storyId } = useParams();
@@ -15,6 +16,7 @@ export default function StoryEditorPage() {
   const [showCreatePageModal, setShowCreatePageModal] = useState(false);
   const [showEditPageModal, setShowEditPageModal] = useState(false);
   const [showAddChoiceModal, setShowAddChoiceModal] = useState(false);
+  const [viewMode, setViewMode] = useState("list"); // "list" ou "tree"
 
   const [pageForm, setPageForm] = useState({
     content: "",
@@ -185,16 +187,84 @@ export default function StoryEditorPage() {
               </h1>
               <p className="text-gray-600 mt-1">Éditeur de pages</p>
             </div>
-            <button
-              onClick={() => setShowCreatePageModal(true)}
-              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold flex items-center gap-2"
-            >
-              <Plus size={20} /> Nouvelle page
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Toggle Vue */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`px-3 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+                    viewMode === "list"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <List size={18} />
+                  Liste
+                </button>
+                <button
+                  onClick={() => setViewMode("tree")}
+                  className={`px-3 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+                    viewMode === "tree"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <GitBranch size={18} />
+                  Arbre
+                </button>
+              </div>
+              <button
+                onClick={() => setShowCreatePageModal(true)}
+                className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold flex items-center gap-2"
+              >
+                <Plus size={20} /> Nouvelle page
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Vue Arbre */}
+        {viewMode === "tree" && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <StoryTree
+              pages={pages}
+              startPageId={story?.startPageId}
+              onPageSelect={(page) => {
+                setSelectedPage(page);
+                setPageForm({
+                  content: page.content || "",
+                  illustration: page.illustration || "",
+                  isEnd: page.isEnd || false,
+                  endLabel: page.endLabel || "",
+                });
+                setShowEditPageModal(true);
+              }}
+            />
+            
+            {/* Légende */}
+            <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-green-500"></div>
+                <span>Page de départ</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-red-500"></div>
+                <span>Page de fin</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-yellow-500"></div>
+                <span>Page orpheline</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-0.5 bg-orange-500"></div>
+                <span>Choix avec dé</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Pages List */}
+        {viewMode === "list" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pages.map((page) => (
             <div
@@ -313,6 +383,7 @@ export default function StoryEditorPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Modal: Créer une page */}
         {showCreatePageModal && (
