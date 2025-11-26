@@ -10,6 +10,7 @@ import {
   Ban,
   PenOff,
   MessageSquareOff,
+  Gamepad2,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -388,9 +389,12 @@ export default function AdminDashboard() {
                                 {story.description}
                               </p>
                               <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                                <span>🎮 {story.stats?.totalPlays || 0}</span>
-                                <span>
-                                  ⭐{" "}
+                                <span className="flex items-center gap-1">
+                                  <Gamepad2 className="w-4 h-4" />
+                                  {story.stats?.totalPlays || 0}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Star className="w-4 h-4" />
                                   {story.rating?.average?.toFixed(1) || "N/A"}
                                 </span>
                                 <span
