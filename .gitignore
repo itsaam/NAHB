@@ -117,3 +117,7 @@ nahb-backend/scripts/createSampleGame.js
 nahb-backend/scripts/archonte-story.json
 nahb-backend/scripts/importStory.js
 nahb-backend/scripts/test-story.json
+nahb-backend/scripts/1partie.json
+nahb-backend/scripts/pokemon-sinnoh-partie1.json
+nahb-backend/scripts/pokemon-sinnoh-complet.json
+nahb-backend/scripts/2partie.json
