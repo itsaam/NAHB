@@ -6,35 +6,45 @@ const getDesignTokens = (mode) => ({
     mode,
     ...(mode === "light"
       ? {
-          // Light mode colors
+          // Light mode colors - Palette NAHB
           primary: {
-            main: "#6366f1",
-            light: "#818cf8",
-            dark: "#4f46e5",
+            main: "#d42b55", // Cherry Rose
+            light: "#dc5677", // Cherry Rose 400
+            dark: "#a92344", // Cherry Rose 600
+          },
+          secondary: {
+            main: "#03fcf0", // Neon Ice
+            light: "#68fdf6",
+            dark: "#02cac0",
+          },
+          success: {
+            main: "#00ffd5", // Seaweed
+            light: "#66ffe6",
+            dark: "#00ccaa",
           },
           background: {
-            default: "#ffffff",
+            default: "#edf2f8", // Pale Sky 50
             paper: "#ffffff",
           },
           text: {
-            primary: "#1a1a1a",
-            secondary: "#666666",
+            primary: "#1c1718", // Coffee Bean 900
+            secondary: "#534649", // Coffee Bean 700
           },
         }
       : {
           // Dark mode colors
           primary: {
-            main: "#818cf8",
-            light: "#a5b4fc",
-            dark: "#6366f1",
+            main: "#dc5677",
+            light: "#e58099",
+            dark: "#d42b55",
           },
           background: {
-            default: "#0a0a0a",
-            paper: "#1a1a1a",
+            default: "#0e1a25",
+            paper: "#1d3449",
           },
           text: {
-            primary: "#ffffff",
-            secondary: "#a3a3a3",
+            primary: "#f3f1f2",
+            secondary: "#b9acaf",
           },
         }),
   },
