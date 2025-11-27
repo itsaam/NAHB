@@ -7,6 +7,7 @@ import {
   LogOut,
   Crown,
   User,
+  Lightbulb,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -62,6 +63,18 @@ export default function Navbar() {
                 }`}
               >
                 Mes activités
+              </Link>
+
+              <Link
+                to="/my-suggestions"
+                className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive("/my-suggestions")
+                    ? "text-cherry-rose-500"
+                    : "text-coffee-bean-600 hover:text-cherry-rose-500"
+                }`}
+              >
+                <Lightbulb className="w-4 h-4" />
+                Mes propositions
               </Link>
 
               {user.role === "admin" && (

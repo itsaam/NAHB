@@ -167,6 +167,25 @@ const initTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_theme_images_theme ON theme_images(theme_id);
     `);
 
+    // Table image_suggestions (propositions d'images par les utilisateurs)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS image_suggestions (
+        id SERIAL PRIMARY KEY,
+        theme_id INTEGER REFERENCES themes(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        suggested_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_image_suggestions_status ON image_suggestions(status);
+      CREATE INDEX IF NOT EXISTS idx_image_suggestions_theme ON image_suggestions(theme_id);
+    `);
+
     // Insérer les thèmes par défaut s'ils n'existent pas
     await pool.query(`
       INSERT INTO themes (name, description) VALUES 

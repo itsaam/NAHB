@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { storiesAPI, pagesAPI, themesAPI } from "../services/api";
+import SuggestImageButton from "../components/SuggestImageButton";
 import {
   Plus,
   Pencil,
@@ -14,6 +15,7 @@ import {
   Settings,
   Images,
   BookOpen,
+  Send,
 } from "lucide-react";
 import StoryTree from "../components/StoryTree";
 
@@ -205,7 +207,9 @@ export default function StoryEditorPage() {
 
   // Ouvrir le modal de modification de l'histoire
   const openEditStory = () => {
-    const currentTheme = themes.find((t) => t.name === story?.theme);
+    const currentTheme = themes.find(
+      (t) => t.name.toLowerCase() === story?.theme?.toLowerCase()
+    );
     setStoryForm({
       title: story?.title || "",
       description: story?.description || "",
@@ -281,7 +285,7 @@ export default function StoryEditorPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               {/* Image de couverture */}
-              <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 shrink-0">
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-cherry-rose-100 to-pale-sky-100 shrink-0">
                 {story?.coverImage ? (
                   <img
                     src={story.coverImage}
@@ -1037,6 +1041,22 @@ export default function StoryEditorPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* Bouton proposer l'image pour le thème */}
+                      {storyForm.coverImage &&
+                        storyForm.theme &&
+                        !isNaN(parseInt(storyForm.theme)) && (
+                          <SuggestImageButton
+                            themeId={parseInt(storyForm.theme)}
+                            themeName={
+                              themes.find(
+                                (t) => t.id === parseInt(storyForm.theme)
+                              )?.name || storyForm.theme
+                            }
+                            currentImageUrl={storyForm.coverImage}
+                            className="mt-3 w-full border-2 border-dashed border-seaweed-300 text-seaweed-600 hover:bg-seaweed-50 hover:border-seaweed-400"
+                          />
+                        )}
                     </div>
 
                     {/* Tags */}

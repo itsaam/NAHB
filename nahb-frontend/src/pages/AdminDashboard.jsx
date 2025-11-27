@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { adminAPI, themesAPI } from "../services/api";
+import { adminAPI, themesAPI, imageSuggestionsAPI } from "../services/api";
 import {
   Users,
   BookOpen,
@@ -15,6 +15,9 @@ import {
   Plus,
   Trash2,
   Image,
+  ImagePlus,
+  Check,
+  X,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -23,6 +26,7 @@ export default function AdminDashboard() {
   const [stories, setStories] = useState([]);
   const [reports, setReports] = useState([]);
   const [themes, setThemes] = useState([]);
+  const [imageSuggestions, setImageSuggestions] = useState([]);
   const [activeTab, setActiveTab] = useState("stats");
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +63,11 @@ export default function AdminDashboard() {
       } else if (activeTab === "themes") {
         const response = await themesAPI.getAll();
         setThemes(response.data.data);
+      } else if (activeTab === "suggestions") {
+        const response = await imageSuggestionsAPI.getAll({
+          status: "pending",
+        });
+        setImageSuggestions(response.data.data);
       }
     } catch (err) {
       toast.error("Erreur lors du chargement");
@@ -174,6 +183,27 @@ export default function AdminDashboard() {
     }
   };
 
+  // ==================== IMAGE SUGGESTIONS ====================
+  const handleApproveSuggestion = async (suggestionId) => {
+    try {
+      await imageSuggestionsAPI.approve(suggestionId);
+      toast.success("Image approuvée et ajoutée au catalogue !");
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erreur lors de l'approbation");
+    }
+  };
+
+  const handleRejectSuggestion = async (suggestionId) => {
+    try {
+      await imageSuggestionsAPI.reject(suggestionId);
+      toast.success("Image refusée");
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Erreur lors du refus");
+    }
+  };
+
   const statCards = stats
     ? [
         {
@@ -278,6 +308,22 @@ export default function AdminDashboard() {
                 }`}
               >
                 Thèmes
+              </button>
+              <button
+                onClick={() => setActiveTab("suggestions")}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+                  activeTab === "suggestions"
+                    ? "bg-background text-foreground shadow-sm"
+                    : ""
+                }`}
+              >
+                <ImagePlus className="w-4 h-4 mr-1" />
+                Suggestions
+                {imageSuggestions.length > 0 && (
+                  <span className="ml-1 bg-cherry-rose-500 text-white text-xs rounded-full px-1.5">
+                    {imageSuggestions.length}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -668,6 +714,86 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggestions Tab */}
+                {activeTab === "suggestions" && (
+                  <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div className="p-6">
+                      <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                        Suggestions d'images
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1.5">
+                        Images proposées par les utilisateurs pour les thèmes
+                      </p>
+                    </div>
+                    <div className="p-6 pt-0">
+                      {imageSuggestions.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <ImagePlus className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>Aucune suggestion en attente</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {imageSuggestions.map((suggestion) => (
+                            <div
+                              key={suggestion.id}
+                              className="rounded-lg border border-border overflow-hidden bg-background"
+                            >
+                              <div className="aspect-video bg-muted">
+                                <img
+                                  src={suggestion.image_url}
+                                  alt="Suggestion"
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              </div>
+                              <div className="p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                    {suggestion.theme_name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(
+                                      suggestion.created_at
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                  Proposé par{" "}
+                                  <span className="font-medium text-foreground">
+                                    {suggestion.user_pseudo}
+                                  </span>
+                                </p>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() =>
+                                      handleApproveSuggestion(suggestion.id)
+                                    }
+                                    className="flex-1 inline-flex items-center justify-center gap-1 h-9 px-3 rounded-md text-sm font-medium bg-seaweed-500 text-white hover:bg-seaweed-600 transition-colors"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                    Approuver
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleRejectSuggestion(suggestion.id)
+                                    }
+                                    className="flex-1 inline-flex items-center justify-center gap-1 h-9 px-3 rounded-md text-sm font-medium bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
+                                  >
+                                    <X className="w-4 h-4" />
+                                    Refuser
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

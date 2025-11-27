@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { storiesAPI, themesAPI } from "../services/api";
 import { Plus, Edit, Trash2, BookOpen, Star, Images, X } from "lucide-react";
+import SuggestImageButton from "../components/SuggestImageButton";
 
 export default function MyStoriesPage() {
   const [stories, setStories] = useState([]);
@@ -401,6 +402,20 @@ export default function MyStoriesPage() {
                       />
                     </div>
                   )}
+                  {/* Bouton proposer l'image pour le thème */}
+                  {newStory.coverImage &&
+                    newStory.theme &&
+                    !isNaN(parseInt(newStory.theme)) && (
+                      <SuggestImageButton
+                        themeId={parseInt(newStory.theme)}
+                        themeName={
+                          themes.find((t) => t.id === parseInt(newStory.theme))
+                            ?.name || "ce thème"
+                        }
+                        currentImageUrl={newStory.coverImage}
+                        className="mt-2 w-full border-2 border-dashed border-seaweed-300 text-seaweed-600 hover:bg-seaweed-50 hover:border-seaweed-400"
+                      />
+                    )}
                   {newStory.theme && selectedThemeImages.length === 0 && (
                     <p className="text-xs text-amber-600">
                       Aucune image dans le catalogue de ce thème. Entrez une URL
