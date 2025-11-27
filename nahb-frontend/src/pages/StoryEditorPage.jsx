@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { storiesAPI, pagesAPI } from "../services/api";
+import { storiesAPI, pagesAPI, themesAPI } from "../services/api";
+import SuggestImageButton from "../components/SuggestImageButton";
 import {
   Plus,
   Pencil,
@@ -11,6 +12,10 @@ import {
   Play,
   GitBranch,
   List,
+  Settings,
+  Images,
+  BookOpen,
+  Send,
 } from "lucide-react";
 import StoryTree from "../components/StoryTree";
 
@@ -26,7 +31,20 @@ export default function StoryEditorPage() {
   const [showCreatePageModal, setShowCreatePageModal] = useState(false);
   const [showEditPageModal, setShowEditPageModal] = useState(false);
   const [showAddChoiceModal, setShowAddChoiceModal] = useState(false);
+  const [showEditStoryModal, setShowEditStoryModal] = useState(false);
   const [viewMode, setViewMode] = useState("list"); // "list" ou "tree"
+
+  // Pour la modification de l'histoire
+  const [themes, setThemes] = useState([]);
+  const [showImageCatalog, setShowImageCatalog] = useState(false);
+  const [selectedThemeImages, setSelectedThemeImages] = useState([]);
+  const [storyForm, setStoryForm] = useState({
+    title: "",
+    description: "",
+    theme: "",
+    coverImage: "",
+    tags: "",
+  });
 
   const [pageForm, setPageForm] = useState({
     content: "",
@@ -45,7 +63,17 @@ export default function StoryEditorPage() {
 
   useEffect(() => {
     loadStoryAndPages();
+    loadThemes();
   }, [storyId]);
+
+  const loadThemes = async () => {
+    try {
+      const response = await themesAPI.getAll();
+      setThemes(response.data.data || []);
+    } catch (err) {
+      console.error("Erreur chargement thèmes:", err);
+    }
+  };
 
   const loadStoryAndPages = async () => {
     try {
@@ -177,6 +205,70 @@ export default function StoryEditorPage() {
     }
   };
 
+  // Ouvrir le modal de modification de l'histoire
+  const openEditStory = () => {
+    const currentTheme = themes.find(
+      (t) => t.name.toLowerCase() === story?.theme?.toLowerCase()
+    );
+    setStoryForm({
+      title: story?.title || "",
+      description: story?.description || "",
+      theme: currentTheme?.id?.toString() || "",
+      coverImage: story?.coverImage || "",
+      tags: story?.tags?.join(", ") || "",
+    });
+    if (currentTheme) {
+      setSelectedThemeImages(currentTheme.images || []);
+    }
+    setShowEditStoryModal(true);
+  };
+
+  // Gérer le changement de thème
+  const handleStoryThemeChange = (themeId) => {
+    const selectedTheme = themes.find((t) => t.id === parseInt(themeId));
+    setStoryForm({ ...storyForm, theme: themeId });
+    if (selectedTheme) {
+      setSelectedThemeImages(selectedTheme.images || []);
+    } else {
+      setSelectedThemeImages([]);
+    }
+  };
+
+  // Sélectionner une image du catalogue
+  const handleSelectStoryImage = (imageUrl) => {
+    setStoryForm({ ...storyForm, coverImage: imageUrl });
+    setShowImageCatalog(false);
+  };
+
+  // Enregistrer les modifications de l'histoire
+  const handleUpdateStory = async (e) => {
+    e.preventDefault();
+    try {
+      const selectedTheme = themes.find(
+        (t) => t.id === parseInt(storyForm.theme)
+      );
+      const themeName = selectedTheme ? selectedTheme.name : storyForm.theme;
+
+      await storiesAPI.update(storyId, {
+        title: storyForm.title,
+        description: storyForm.description,
+        theme: themeName,
+        coverImage: storyForm.coverImage,
+        tags: storyForm.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t),
+      });
+      setShowEditStoryModal(false);
+      loadStoryAndPages();
+      alert("✅ Histoire modifiée avec succès !");
+    } catch (err) {
+      alert(
+        "❌ " + (err.response?.data?.error || "Erreur lors de la modification")
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -190,14 +282,43 @@ export default function StoryEditorPage() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-coffee-bean-900">
-                {story?.title}
-              </h1>
-              <p className="text-coffee-bean-600 mt-1">Éditeur de pages</p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              {/* Image de couverture */}
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-cherry-rose-100 to-pale-sky-100 shrink-0">
+                {story?.coverImage ? (
+                  <img
+                    src={story.coverImage}
+                    alt={story.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <BookOpen className="w-8 h-8 text-coffee-bean-300" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-coffee-bean-900">
+                  {story?.title}
+                </h1>
+                <p className="text-coffee-bean-600 mt-1">Éditeur de pages</p>
+                {story?.theme && (
+                  <span className="inline-block mt-2 px-2 py-1 text-xs font-medium bg-pale-sky-100 text-coffee-bean-600 rounded">
+                    {story.theme}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Bouton Paramètres */}
+              <button
+                onClick={openEditStory}
+                className="bg-pale-sky-100 text-coffee-bean-700 px-4 py-3 rounded-lg hover:bg-pale-sky-200 font-medium flex items-center gap-2"
+                title="Modifier les informations de l'histoire"
+              >
+                <Settings size={20} /> Paramètres
+              </button>
               {/* Toggle Vue */}
               <div className="flex bg-pale-sky-100 rounded-lg p-1">
                 <button
@@ -456,7 +577,10 @@ export default function StoryEditorPage() {
                         }
                         className="rounded"
                       />
-                      <label htmlFor="isEnd" className="text-sm text-coffee-bean-700">
+                      <label
+                        htmlFor="isEnd"
+                        className="text-sm text-coffee-bean-700"
+                      >
                         Cette page est une fin
                       </label>
                     </div>
@@ -753,6 +877,218 @@ export default function StoryEditorPage() {
                       className="flex-1 bg-cherry-rose-500 text-white py-3 rounded-lg"
                     >
                       Ajouter
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Modifier l'histoire */}
+        {showEditStoryModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold">
+                    Paramètres de l'histoire
+                  </h2>
+                  <button
+                    onClick={() => setShowEditStoryModal(false)}
+                    className="text-coffee-bean-500 hover:text-coffee-bean-700"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpdateStory}>
+                  <div className="space-y-6">
+                    {/* Titre */}
+                    <div>
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
+                        Titre *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={storyForm.title}
+                        onChange={(e) =>
+                          setStoryForm({ ...storyForm, title: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={storyForm.description}
+                        onChange={(e) =>
+                          setStoryForm({
+                            ...storyForm,
+                            description: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
+                      />
+                    </div>
+
+                    {/* Thème */}
+                    <div>
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
+                        Thème
+                      </label>
+                      <select
+                        value={storyForm.theme}
+                        onChange={(e) => handleStoryThemeChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
+                      >
+                        <option value="">-- Sélectionner un thème --</option>
+                        {themes.map((theme) => (
+                          <option key={theme.id} value={theme.id}>
+                            {theme.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Image de couverture */}
+                    <div>
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
+                        Image de couverture
+                      </label>
+
+                      {/* Aperçu de l'image actuelle */}
+                      {storyForm.coverImage && (
+                        <div className="mb-3 relative inline-block">
+                          <img
+                            src={storyForm.coverImage}
+                            alt="Couverture"
+                            className="h-32 w-auto rounded-lg object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setStoryForm({ ...storyForm, coverImage: "" })
+                            }
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* URL de l'image */}
+                      <input
+                        type="url"
+                        value={storyForm.coverImage}
+                        onChange={(e) =>
+                          setStoryForm({
+                            ...storyForm,
+                            coverImage: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
+                        placeholder="https://exemple.com/image.jpg"
+                      />
+
+                      {/* Bouton catalogue si thème sélectionné */}
+                      {selectedThemeImages.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowImageCatalog(!showImageCatalog)}
+                          className="mt-2 flex items-center gap-2 text-sm text-cherry-rose-500 hover:text-cherry-rose-700"
+                        >
+                          <Images size={16} />
+                          {showImageCatalog
+                            ? "Masquer le catalogue"
+                            : "Voir les images du thème"}
+                        </button>
+                      )}
+
+                      {/* Catalogue d'images */}
+                      {showImageCatalog && selectedThemeImages.length > 0 && (
+                        <div className="mt-3 p-4 bg-pale-sky-50 rounded-lg border border-pale-sky-200">
+                          <p className="text-sm text-coffee-bean-600 mb-3">
+                            Cliquez sur une image pour la sélectionner :
+                          </p>
+                          <div className="grid grid-cols-3 gap-3">
+                            {selectedThemeImages.map((img, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() =>
+                                  handleSelectStoryImage(img.image_url)
+                                }
+                                className={`relative rounded-lg overflow-hidden border-2 transition-all ${
+                                  storyForm.coverImage === img.image_url
+                                    ? "border-cherry-rose-500 ring-2 ring-cherry-rose-200"
+                                    : "border-transparent hover:border-pale-sky-300"
+                                }`}
+                              >
+                                <img
+                                  src={img.image_url}
+                                  alt={img.name || `Image ${idx + 1}`}
+                                  className="w-full h-20 object-cover"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bouton proposer l'image pour le thème */}
+                      {storyForm.coverImage &&
+                        storyForm.theme &&
+                        !isNaN(parseInt(storyForm.theme)) && (
+                          <SuggestImageButton
+                            themeId={parseInt(storyForm.theme)}
+                            themeName={
+                              themes.find(
+                                (t) => t.id === parseInt(storyForm.theme)
+                              )?.name || storyForm.theme
+                            }
+                            currentImageUrl={storyForm.coverImage}
+                            className="mt-3 w-full border-2 border-dashed border-seaweed-300 text-seaweed-600 hover:bg-seaweed-50 hover:border-seaweed-400"
+                          />
+                        )}
+                    </div>
+
+                    {/* Tags */}
+                    <div>
+                      <label className="block text-sm font-medium text-coffee-bean-700 mb-2">
+                        Tags (séparés par des virgules)
+                      </label>
+                      <input
+                        type="text"
+                        value={storyForm.tags}
+                        onChange={(e) =>
+                          setStoryForm({ ...storyForm, tags: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-pale-sky-300 rounded-lg"
+                        placeholder="aventure, fantasy, mystère"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditStoryModal(false)}
+                      className="flex-1 bg-pale-sky-200 py-3 rounded-lg hover:bg-pale-sky-300"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-cherry-rose-500 text-white py-3 rounded-lg hover:bg-cherry-rose-600"
+                    >
+                      Enregistrer
                     </button>
                   </div>
                 </form>
