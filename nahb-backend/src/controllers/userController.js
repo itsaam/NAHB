@@ -1,4 +1,5 @@
-const { pool } = require("../config/postgresql");
+const reviewService = require("../services/reviewService");
+const unlockedEndingService = require("../services/unlockedEndingService");
 const Story = require("../models/mongodb/Story");
 const Page = require("../models/mongodb/Page");
 const logger = require("../utils/logger");
@@ -21,16 +22,13 @@ const getUnlockedEndings = async (req, res) => {
     }
 
     // Récupérer les fins débloquées depuis PostgreSQL
-    const result = await pool.query(
-      `SELECT ue.end_page_mongo_id, ue.unlocked_at 
-       FROM unlocked_endings ue
-       WHERE ue.user_id = $1 AND ue.story_mongo_id = $2
-       ORDER BY ue.unlocked_at DESC`,
-      [userId, storyId]
+    const unlockedData = await unlockedEndingService.findByUserAndStory(
+      userId,
+      storyId
     );
 
     // Récupérer les détails des pages finales depuis MongoDB
-    const endPageIds = result.rows.map((row) => row.end_page_mongo_id);
+    const endPageIds = unlockedData.map((row) => row.end_page_mongo_id);
     const endPages = await Page.find({
       _id: { $in: endPageIds },
       storyId: storyId,
@@ -39,7 +37,7 @@ const getUnlockedEndings = async (req, res) => {
 
     // Construire la réponse avec les dates de déblocage
     const unlockedEndings = endPages.map((page) => {
-      const unlockInfo = result.rows.find(
+      const unlockInfo = unlockedData.find(
         (row) => row.end_page_mongo_id === page._id.toString()
       );
       return {
@@ -109,12 +107,11 @@ const getAllStoryEndings = async (req, res) => {
     // Si l'utilisateur est connecté, marquer celles qu'il a débloquées
     let unlockedEndingIds = [];
     if (userId) {
-      const result = await pool.query(
-        `SELECT end_page_mongo_id FROM unlocked_endings 
-         WHERE user_id = $1 AND story_mongo_id = $2`,
-        [userId, storyId]
-      );
-      unlockedEndingIds = result.rows.map((row) => row.end_page_mongo_id);
+      unlockedEndingIds =
+        await unlockedEndingService.getEndPageIdsByUserAndStory(
+          userId,
+          storyId
+        );
     }
 
     // Construire la réponse
@@ -164,38 +161,29 @@ const createOrUpdateReview = async (req, res) => {
     }
 
     // Vérifier si une review existe déjà
-    const existing = await pool.query(
-      "SELECT id FROM reviews WHERE user_id = $1 AND story_mongo_id = $2",
-      [userId, storyMongoId]
+    const existing = await reviewService.findByUserAndStory(
+      userId,
+      storyMongoId
     );
 
-    if (existing.rows.length > 0) {
+    if (existing) {
       // Mettre à jour
-      await pool.query(
-        "UPDATE reviews SET rating = $1, comment = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
-        [rating, comment || null, existing.rows[0].id]
-      );
+      await reviewService.update(existing.id, { rating, comment });
       logger.info(
         `Review mise à jour - User: ${userId}, Story: ${storyMongoId}`
       );
     } else {
       // Créer
-      await pool.query(
-        "INSERT INTO reviews (user_id, story_mongo_id, rating, comment) VALUES ($1, $2, $3, $4)",
-        [userId, storyMongoId, rating, comment || null]
-      );
+      await reviewService.create({ userId, storyMongoId, rating, comment });
       logger.info(`Review créée - User: ${userId}, Story: ${storyMongoId}`);
     }
 
     // Recalculer la moyenne des notes
-    const stats = await pool.query(
-      "SELECT AVG(rating) as avg, COUNT(*) as count FROM reviews WHERE story_mongo_id = $1",
-      [storyMongoId]
-    );
+    const stats = await reviewService.getStoryRatingStats(storyMongoId);
 
     await Story.findByIdAndUpdate(storyMongoId, {
-      "rating.average": parseFloat(stats.rows[0].avg),
-      "rating.count": parseInt(stats.rows[0].count),
+      "rating.average": stats.average,
+      "rating.count": stats.count,
     });
 
     res.status(200).json({ success: true, message: "Review enregistrée" });
@@ -212,16 +200,9 @@ const getStoryReviews = async (req, res) => {
   try {
     const { storyId } = req.params;
 
-    const result = await pool.query(
-      `SELECT r.id, r.rating, r.comment, r.created_at, u.pseudo 
-       FROM reviews r 
-       JOIN users u ON r.user_id = u.id 
-       WHERE r.story_mongo_id = $1 
-       ORDER BY r.created_at DESC`,
-      [storyId]
-    );
+    const reviews = await reviewService.findByStory(storyId);
 
-    res.status(200).json({ success: true, data: result.rows });
+    res.status(200).json({ success: true, data: reviews });
   } catch (error) {
     logger.error(`Erreur getStoryReviews : ${error.message}`);
     res.status(500).json({ success: false, error: "Erreur serveur" });
@@ -236,12 +217,9 @@ const deleteReview = async (req, res) => {
     const userId = req.user.id;
     const { storyId } = req.params;
 
-    const result = await pool.query(
-      "DELETE FROM reviews WHERE user_id = $1 AND story_mongo_id = $2 RETURNING *",
-      [userId, storyId]
-    );
+    const result = await reviewService.deleteByUserAndStory(userId, storyId);
 
-    if (result.rows.length === 0) {
+    if (!result) {
       return res
         .status(404)
         .json({ success: false, error: "Review introuvable" });
@@ -262,6 +240,7 @@ const createReport = async (req, res) => {
   try {
     const userId = req.user.id;
     const { storyMongoId, reason } = req.body;
+    const reportService = require("../services/reportService");
 
     // Vérifier que l'histoire existe
     const story = await Story.findById(storyMongoId);
@@ -272,10 +251,7 @@ const createReport = async (req, res) => {
     }
 
     // Insérer le signalement
-    await pool.query(
-      "INSERT INTO reports (user_id, story_mongo_id, reason) VALUES ($1, $2, $3)",
-      [userId, storyMongoId, reason]
-    );
+    await reportService.create({ userId, storyMongoId, reason });
 
     logger.info(`Signalement créé - User: ${userId}, Story: ${storyMongoId}`);
     res.status(201).json({ success: true, message: "Signalement enregistré" });

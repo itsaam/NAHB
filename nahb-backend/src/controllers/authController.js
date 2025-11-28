@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const { pool } = require("../config/postgresql");
+const userService = require("../services/userService");
 const logger = require("../utils/logger");
 const {
   created,
@@ -23,32 +23,20 @@ const {
  */
 const register = async (req, res) => {
   try {
-    /*console.log("=== DEBUG REGISTER ===");
-    console.log("Body:", req.body);
-    console.log("Headers:", req.headers);
-    console.log("====================="); */
     const { pseudo, email, password, role } = req.body;
 
     logger.info(`Tentative d'inscription : ${email}`);
 
     // Vérifier si l'email existe déjà
-    const emailCheck = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-
-    if (emailCheck.rows.length > 0) {
+    const emailExists = await userService.findByEmail(email);
+    if (emailExists) {
       logger.warn(`Email déjà utilisé : ${email}`);
       return conflict(res, "Ces identifiants sont déjà utilisés.");
     }
 
     // Vérifier si le pseudo existe déjà
-    const pseudoCheck = await pool.query(
-      "SELECT id FROM users WHERE pseudo = $1",
-      [pseudo]
-    );
-
-    if (pseudoCheck.rows.length > 0) {
+    const pseudoExists = await userService.findByPseudo(pseudo);
+    if (pseudoExists) {
       logger.warn(`Pseudo déjà utilisé : ${pseudo}`);
       return conflict(res, "Ces identifiants sont déjà utilisés.");
     }
@@ -57,14 +45,12 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Créer l'utilisateur
-    const result = await pool.query(
-      `INSERT INTO users (pseudo, email, password, role) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING id, pseudo, email, role, avatar, created_at`,
-      [pseudo, email, hashedPassword, role || "lecteur"]
-    );
-
-    const user = result.rows[0];
+    const user = await userService.create({
+      pseudo,
+      email,
+      hashedPassword,
+      role: role || "lecteur",
+    });
 
     // Générer un token JWT
     const token = jwt.sign(
@@ -109,17 +95,12 @@ const login = async (req, res) => {
     logger.info(`Tentative de connexion : ${email}`);
 
     // Récupérer l'utilisateur
-    const result = await pool.query(
-      "SELECT id, pseudo, email, password, role, avatar, is_banned FROM users WHERE email = $1",
-      [email]
-    );
+    const user = await userService.findByEmail(email);
 
-    if (result.rows.length === 0) {
+    if (!user) {
       logger.warn(`Tentative de connexion avec email inexistant : ${email}`);
       return unauthorized(res, "Email ou mot de passe incorrect.");
     }
-
-    const user = result.rows[0];
 
     // Vérifier si l'utilisateur est banni
     if (user.is_banned) {
@@ -169,18 +150,12 @@ const getProfile = async (req, res) => {
 
     logger.info(`Récupération du profil : ${userId}`);
 
-    const result = await pool.query(
-      `SELECT id, pseudo, email, role, avatar, is_banned, created_at, updated_at 
-       FROM users WHERE id = $1`,
-      [userId]
-    );
+    const user = await userService.findById(userId);
 
-    if (result.rows.length === 0) {
+    if (!user) {
       logger.warn(`Profil introuvable : ${userId}`);
       return notFound(res, "Utilisateur introuvable.");
     }
-
-    const user = result.rows[0];
 
     return success(res, {
       id: user.id,
@@ -208,26 +183,20 @@ const checkStatus = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const result = await pool.query(
-      "SELECT is_banned, ban_type, ban_reason, banned_at FROM users WHERE id = $1",
-      [userId]
-    );
+    const banStatus = await userService.getBanStatus(userId);
 
-    if (result.rows.length === 0) {
+    if (!banStatus) {
       return res.status(404).json({
         success: false,
         error: "Utilisateur introuvable.",
       });
     }
 
-    const user = result.rows[0];
-
-    // Retourner les infos de ban (le frontend gère l'affichage)
     return success(res, {
-      isBanned: user.is_banned,
-      banType: user.ban_type,
-      banReason: user.ban_reason,
-      bannedAt: user.banned_at,
+      isBanned: banStatus.is_banned,
+      banType: banStatus.ban_type,
+      banReason: banStatus.ban_reason,
+      bannedAt: banStatus.banned_at,
     });
   } catch (err) {
     logger.error(`Erreur checkStatus : ${err.message}`);
@@ -245,45 +214,18 @@ const updateProfile = async (req, res) => {
 
     logger.info(`Mise à jour du profil : ${userId}`);
 
-    const updates = [];
-    const values = [];
-    let paramIndex = 1;
-
     if (email) {
-      // Vérifier si l'email n'est pas déjà utilisé par un autre utilisateur
-      const emailCheck = await pool.query(
-        "SELECT id FROM users WHERE email = $1 AND id != $2",
-        [email, userId]
-      );
-
-      if (emailCheck.rows.length > 0) {
+      const emailExists = await userService.checkEmailExists(email, userId);
+      if (emailExists) {
         return conflict(res, "Cet email est déjà utilisé.");
       }
-
-      updates.push(`email = $${paramIndex++}`);
-      values.push(email);
     }
 
-    if (avatar !== undefined) {
-      updates.push(`avatar = $${paramIndex++}`);
-      values.push(avatar);
-    }
-
-    if (updates.length === 0) {
+    if (!email && avatar === undefined) {
       return badRequest(res, "Aucune modification fournie.");
     }
 
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(userId);
-
-    const result = await pool.query(
-      `UPDATE users SET ${updates.join(", ")} 
-       WHERE id = $${paramIndex}
-       RETURNING id, pseudo, email, avatar, role, updated_at`,
-      values
-    );
-
-    const user = result.rows[0];
+    const user = await userService.updateProfile(userId, { email, avatar });
 
     logger.info(`Profil mis à jour avec succès : ${userId}`);
 
@@ -312,21 +254,16 @@ const updatePassword = async (req, res) => {
     logger.info(`Tentative de changement de mot de passe : ${userId}`);
 
     // Récupérer le mot de passe actuel
-    const result = await pool.query(
-      "SELECT password FROM users WHERE id = $1",
-      [userId]
-    );
+    const storedPassword = await userService.getPassword(userId);
 
-    if (result.rows.length === 0) {
+    if (!storedPassword) {
       return notFound(res, "Utilisateur introuvable.");
     }
-
-    const user = result.rows[0];
 
     // Vérifier le mot de passe actuel
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password
+      storedPassword
     );
 
     if (!isPasswordValid) {
@@ -338,10 +275,7 @@ const updatePassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Mettre à jour
-    await pool.query(
-      "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-      [hashedPassword, userId]
-    );
+    await userService.updatePassword(userId, hashedPassword);
 
     logger.info(`Mot de passe mis à jour avec succès : ${userId}`);
 
@@ -364,21 +298,16 @@ const forgotPassword = async (req, res) => {
     logger.info(`Demande de réinitialisation de mot de passe : ${email}`);
 
     // Vérifier si l'utilisateur existe
-    const result = await pool.query(
-      "SELECT id, pseudo, email FROM users WHERE email = $1",
-      [email]
-    );
+    const user = await userService.findByEmail(email);
 
     // Pour la sécurité, on retourne toujours succès même si l'email n'existe pas
-    if (result.rows.length === 0) {
+    if (!user) {
       logger.warn(`Email inexistant pour reset : ${email}`);
       return success(res, {
         message:
           "Si cet email existe, un lien de réinitialisation a été envoyé.",
       });
     }
-
-    const user = result.rows[0];
 
     // Générer un token de réinitialisation (valide 1h)
     const resetToken = crypto.randomBytes(32).toString("hex");
@@ -389,12 +318,7 @@ const forgotPassword = async (req, res) => {
     const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 heure
 
     // Stocker le token dans la base de données
-    await pool.query(
-      `UPDATE users 
-       SET reset_token = $1, reset_token_expiry = $2 
-       WHERE id = $3`,
-      [resetTokenHash, resetTokenExpiry, user.id]
-    );
+    await userService.setResetToken(user.id, resetTokenHash, resetTokenExpiry);
 
     // Envoyer l'email en arrière-plan (ne pas attendre)
     sendPasswordResetEmail(user.email, resetToken, user.pseudo)
@@ -444,34 +368,18 @@ const resetPassword = async (req, res) => {
       .digest("hex");
 
     // Trouver l'utilisateur avec ce token valide
-    const result = await pool.query(
-      `SELECT id, pseudo, email 
-       FROM users 
-       WHERE reset_token = $1 
-       AND reset_token_expiry > NOW()`,
-      [resetTokenHash]
-    );
+    const user = await userService.findByResetToken(resetTokenHash);
 
-    if (result.rows.length === 0) {
+    if (!user) {
       logger.warn(`Token invalide ou expiré`);
       return unauthorized(res, "Token invalide ou expiré.");
     }
-
-    const user = result.rows[0];
 
     // Hasher le nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Mettre à jour le mot de passe et supprimer le token
-    await pool.query(
-      `UPDATE users 
-       SET password = $1, 
-           reset_token = NULL, 
-           reset_token_expiry = NULL,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [hashedPassword, user.id]
-    );
+    await userService.clearResetToken(user.id, hashedPassword);
 
     logger.info(`Mot de passe réinitialisé pour ${user.id} (${user.pseudo})`);
 

@@ -1,4 +1,7 @@
-const { pool } = require("../config/postgresql");
+const userService = require("../services/userService");
+const reportService = require("../services/reportService");
+const reviewService = require("../services/reviewService");
+const gameSessionService = require("../services/gameSessionService");
 const Story = require("../models/mongodb/Story");
 const logger = require("../utils/logger");
 
@@ -28,20 +31,15 @@ const banUser = async (req, res) => {
     );
 
     // Vérifier que l'utilisateur existe
-    const userCheck = await pool.query(
-      "SELECT id, pseudo, role FROM users WHERE id = $1",
-      [userId]
-    );
+    const user = await userService.findById(userId);
 
-    if (userCheck.rows.length === 0) {
+    if (!user) {
       logger.warn(`Utilisateur introuvable : ${userId}`);
       return res.status(404).json({
         success: false,
         error: "Utilisateur introuvable.",
       });
     }
-
-    const user = userCheck.rows[0];
 
     // Empêcher de bannir un admin
     if (user.role === "admin") {
@@ -53,16 +51,7 @@ const banUser = async (req, res) => {
     }
 
     // Bannir l'utilisateur
-    await pool.query(
-      `UPDATE users SET 
-        is_banned = TRUE, 
-        ban_type = $1, 
-        ban_reason = $2, 
-        banned_at = CURRENT_TIMESTAMP,
-        updated_at = CURRENT_TIMESTAMP 
-      WHERE id = $3`,
-      [banType, reason || null, userId]
-    );
+    await userService.ban(userId, banType, reason);
 
     const banTypeLabels = {
       full: "complètement banni",
@@ -102,12 +91,9 @@ const unbanUser = async (req, res) => {
     logger.info(`Admin ${adminId} débannit l'utilisateur ${userId}`);
 
     // Vérifier que l'utilisateur existe
-    const userCheck = await pool.query(
-      "SELECT id, pseudo FROM users WHERE id = $1",
-      [userId]
-    );
+    const user = await userService.findById(userId);
 
-    if (userCheck.rows.length === 0) {
+    if (!user) {
       logger.warn(`Utilisateur introuvable : ${userId}`);
       return res.status(404).json({
         success: false,
@@ -115,19 +101,8 @@ const unbanUser = async (req, res) => {
       });
     }
 
-    const user = userCheck.rows[0];
-
-    // Débannir l'utilisateur (reset tous les champs de ban)
-    await pool.query(
-      `UPDATE users SET 
-        is_banned = FALSE, 
-        ban_type = NULL, 
-        ban_reason = NULL, 
-        banned_at = NULL,
-        updated_at = CURRENT_TIMESTAMP 
-      WHERE id = $1`,
-      [userId]
-    );
+    // Débannir l'utilisateur
+    await userService.unban(userId);
 
     logger.info(`Utilisateur ${userId} (${user.pseudo}) débanni avec succès`);
 
@@ -238,35 +213,10 @@ const getGlobalStats = async (req, res) => {
     logger.info("Récupération des statistiques globales");
 
     // Stats PostgreSQL
-    const userStatsResult = await pool.query(`
-      SELECT 
-        COUNT(*) as total_users,
-        COUNT(*) FILTER (WHERE role = 'auteur') as total_authors,
-        COUNT(*) FILTER (WHERE role = 'lecteur') as total_readers,
-        COUNT(*) FILTER (WHERE is_banned = TRUE) as banned_users
-      FROM users
-    `);
-
-    const sessionStatsResult = await pool.query(`
-      SELECT 
-        COUNT(*) as total_sessions,
-        COUNT(*) FILTER (WHERE is_completed = TRUE) as completed_sessions
-      FROM game_sessions
-    `);
-
-    const reviewStatsResult = await pool.query(`
-      SELECT 
-        COUNT(*) as total_reviews,
-        AVG(rating) as average_rating
-      FROM reviews
-    `);
-
-    const reportStatsResult = await pool.query(`
-      SELECT 
-        COUNT(*) as total_reports,
-        COUNT(*) FILTER (WHERE status = 'pending') as pending_reports
-      FROM reports
-    `);
+    const userStats = await userService.getStats();
+    const sessionStats = await gameSessionService.getGlobalStats();
+    const reviewStats = await reviewService.getGlobalStats();
+    const reportStats = await reportService.getGlobalStats();
 
     // Stats MongoDB
     const totalStories = await Story.countDocuments();
@@ -287,7 +237,7 @@ const getGlobalStats = async (req, res) => {
     ]);
 
     const stats = {
-      users: userStatsResult.rows[0],
+      users: userStats,
       stories: {
         total: totalStories,
         published: publishedStories,
@@ -295,14 +245,9 @@ const getGlobalStats = async (req, res) => {
         totalPlays: storyStats[0]?.totalPlays || 0,
         totalCompletions: storyStats[0]?.totalCompletions || 0,
       },
-      sessions: sessionStatsResult.rows[0],
-      reviews: {
-        total: parseInt(reviewStatsResult.rows[0].total_reviews),
-        averageRating: parseFloat(
-          reviewStatsResult.rows[0].average_rating || 0
-        ).toFixed(2),
-      },
-      reports: reportStatsResult.rows[0],
+      sessions: sessionStats,
+      reviews: reviewStats,
+      reports: reportStats,
     };
 
     logger.info("Statistiques globales récupérées avec succès");
@@ -329,13 +274,7 @@ const getAllUsers = async (req, res) => {
   try {
     logger.info("Récupération de tous les utilisateurs");
 
-    const result = await pool.query(`
-      SELECT id, pseudo, email, role, is_banned, ban_type, ban_reason, banned_at, created_at 
-      FROM users 
-      ORDER BY created_at DESC
-    `);
-
-    const users = result.rows;
+    const users = await userService.findAll();
 
     logger.info(`${users.length} utilisateurs trouvés`);
 
@@ -392,17 +331,7 @@ const getAllReports = async (req, res) => {
 
     logger.info("Récupération des signalements");
 
-    let query = "SELECT * FROM reports ORDER BY created_at DESC";
-    const params = [];
-
-    if (status) {
-      query =
-        "SELECT * FROM reports WHERE status = $1 ORDER BY created_at DESC";
-      params.push(status);
-    }
-
-    const result = await pool.query(query, params);
-    const reports = result.rows;
+    const reports = await reportService.findAll(status);
 
     logger.info(`${reports.length} signalements trouvés`);
 
@@ -439,12 +368,9 @@ const handleReport = async (req, res) => {
     logger.info(`Traitement du signalement ${reportId} : ${status}`);
 
     // Récupérer le signalement
-    const reportResult = await pool.query(
-      "SELECT * FROM reports WHERE id = $1",
-      [reportId]
-    );
+    const report = await reportService.findById(reportId);
 
-    if (reportResult.rows.length === 0) {
+    if (!report) {
       logger.warn(`Signalement introuvable : ${reportId}`);
       return res.status(404).json({
         success: false,
@@ -452,24 +378,16 @@ const handleReport = async (req, res) => {
       });
     }
 
-    const report = reportResult.rows[0];
-
     // Mettre à jour le signalement
-    await pool.query("UPDATE reports SET status = $1 WHERE id = $2", [
-      status,
-      reportId,
-    ]);
+    await reportService.updateStatus(reportId, status);
 
     let storySuspended = false;
 
     // Si le signalement est accepté, vérifier le nombre de signalements acceptés pour cette histoire
     if (status === "resolved") {
-      const countResult = await pool.query(
-        "SELECT COUNT(*) as count FROM reports WHERE story_mongo_id = $1 AND status = 'resolved'",
-        [report.story_mongo_id]
+      const resolvedCount = await reportService.countResolvedByStory(
+        report.story_mongo_id
       );
-
-      const resolvedCount = parseInt(countResult.rows[0].count);
       logger.info(
         `Histoire ${report.story_mongo_id} : ${resolvedCount} signalements acceptés`
       );
