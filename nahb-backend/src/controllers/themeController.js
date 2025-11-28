@@ -1,4 +1,4 @@
-const { pool } = require("../config/postgresql");
+const themeService = require("../services/themeService");
 const logger = require("../utils/logger");
 
 /**
@@ -6,20 +6,11 @@ const logger = require("../utils/logger");
  */
 const getAllThemes = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT t.*, 
-        COALESCE(
-          (SELECT json_agg(json_build_object('id', ti.id, 'image_url', ti.image_url, 'alt_text', ti.alt_text))
-           FROM theme_images ti WHERE ti.theme_id = t.id), 
-          '[]'
-        ) as images
-      FROM themes t
-      ORDER BY t.name
-    `);
+    const themes = await themeService.findAll();
 
     res.json({
       success: true,
-      data: result.rows,
+      data: themes,
     });
   } catch (err) {
     logger.error(`Erreur getAllThemes: ${err.message}`);
@@ -37,19 +28,9 @@ const getThemeById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
-      `SELECT t.*, 
-        COALESCE(
-          (SELECT json_agg(json_build_object('id', ti.id, 'image_url', ti.image_url, 'alt_text', ti.alt_text))
-           FROM theme_images ti WHERE ti.theme_id = t.id), 
-          '[]'
-        ) as images
-      FROM themes t
-      WHERE t.id = $1`,
-      [id]
-    );
+    const theme = await themeService.findById(id);
 
-    if (result.rows.length === 0) {
+    if (!theme) {
       return res.status(404).json({
         success: false,
         error: "Thème introuvable",
@@ -58,7 +39,7 @@ const getThemeById = async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows[0],
+      data: theme,
     });
   } catch (err) {
     logger.error(`Erreur getThemeById: ${err.message}`);
@@ -76,18 +57,17 @@ const createTheme = async (req, res) => {
   try {
     const { name, description, default_image } = req.body;
 
-    const result = await pool.query(
-      `INSERT INTO themes (name, description, default_image) 
-       VALUES ($1, $2, $3) 
-       RETURNING *`,
-      [name, description, default_image]
-    );
+    const theme = await themeService.create({
+      name,
+      description,
+      defaultImage: default_image,
+    });
 
     logger.info(`Thème créé: ${name}`);
 
     res.status(201).json({
       success: true,
-      data: result.rows[0],
+      data: theme,
     });
   } catch (err) {
     if (err.code === "23505") {
@@ -112,17 +92,13 @@ const updateTheme = async (req, res) => {
     const { id } = req.params;
     const { name, description, default_image } = req.body;
 
-    const result = await pool.query(
-      `UPDATE themes 
-       SET name = COALESCE($1, name), 
-           description = COALESCE($2, description),
-           default_image = COALESCE($3, default_image)
-       WHERE id = $4
-       RETURNING *`,
-      [name, description, default_image, id]
-    );
+    const theme = await themeService.update(id, {
+      name,
+      description,
+      defaultImage: default_image,
+    });
 
-    if (result.rows.length === 0) {
+    if (!theme) {
       return res.status(404).json({
         success: false,
         error: "Thème introuvable",
@@ -133,7 +109,7 @@ const updateTheme = async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows[0],
+      data: theme,
     });
   } catch (err) {
     logger.error(`Erreur updateTheme: ${err.message}`);
@@ -151,12 +127,9 @@ const deleteTheme = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
-      "DELETE FROM themes WHERE id = $1 RETURNING *",
-      [id]
-    );
+    const theme = await themeService.deleteById(id);
 
-    if (result.rows.length === 0) {
+    if (!theme) {
       return res.status(404).json({
         success: false,
         error: "Thème introuvable",
@@ -187,28 +160,24 @@ const addImageToTheme = async (req, res) => {
     const { image_url, alt_text } = req.body;
 
     // Vérifier que le thème existe
-    const themeCheck = await pool.query("SELECT id FROM themes WHERE id = $1", [
-      id,
-    ]);
-    if (themeCheck.rows.length === 0) {
+    const themeExists = await themeService.exists(id);
+    if (!themeExists) {
       return res.status(404).json({
         success: false,
         error: "Thème introuvable",
       });
     }
 
-    const result = await pool.query(
-      `INSERT INTO theme_images (theme_id, image_url, alt_text) 
-       VALUES ($1, $2, $3) 
-       RETURNING *`,
-      [id, image_url, alt_text]
-    );
+    const image = await themeService.addImage(id, {
+      imageUrl: image_url,
+      altText: alt_text,
+    });
 
     logger.info(`Image ajoutée au thème ${id}`);
 
     res.status(201).json({
       success: true,
-      data: result.rows[0],
+      data: image,
     });
   } catch (err) {
     logger.error(`Erreur addImageToTheme: ${err.message}`);
@@ -226,12 +195,9 @@ const deleteThemeImage = async (req, res) => {
   try {
     const { imageId } = req.params;
 
-    const result = await pool.query(
-      "DELETE FROM theme_images WHERE id = $1 RETURNING *",
-      [imageId]
-    );
+    const image = await themeService.deleteImage(imageId);
 
-    if (result.rows.length === 0) {
+    if (!image) {
       return res.status(404).json({
         success: false,
         error: "Image introuvable",
@@ -260,25 +226,11 @@ const getAllImages = async (req, res) => {
   try {
     const { theme_id } = req.query;
 
-    let query = `
-      SELECT ti.*, t.name as theme_name 
-      FROM theme_images ti
-      JOIN themes t ON ti.theme_id = t.id
-    `;
-    const params = [];
-
-    if (theme_id) {
-      query += " WHERE ti.theme_id = $1";
-      params.push(theme_id);
-    }
-
-    query += " ORDER BY t.name, ti.created_at DESC";
-
-    const result = await pool.query(query, params);
+    const images = await themeService.getAllImages(theme_id);
 
     res.json({
       success: true,
-      data: result.rows,
+      data: images,
     });
   } catch (err) {
     logger.error(`Erreur getAllImages: ${err.message}`);

@@ -1,4 +1,6 @@
-const { pool } = require("../config/postgresql");
+const gameSessionService = require("../services/gameSessionService");
+const sessionPathService = require("../services/sessionPathService");
+const unlockedEndingService = require("../services/unlockedEndingService");
 const Story = require("../models/mongodb/Story");
 const Page = require("../models/mongodb/Page");
 const logger = require("../utils/logger");
@@ -60,17 +62,13 @@ const startGame = async (req, res) => {
         `🔍 Recherche d'une session existante pour user ${userId} et story ${storyMongoId}`
       );
 
-      const existingSession = await pool.query(
-        `SELECT * FROM game_sessions 
-         WHERE user_id = $1 AND story_mongo_id = $2 AND is_completed = false 
-         ORDER BY updated_at DESC LIMIT 1`,
-        [userId, storyMongoId]
+      const existingSession = await gameSessionService.findActiveSession(
+        userId,
+        storyMongoId
       );
 
-      console.log(`📊 Sessions trouvées: ${existingSession.rows.length}`);
-
-      if (existingSession.rows.length > 0) {
-        session = existingSession.rows[0];
+      if (existingSession) {
+        session = existingSession;
         console.log(
           `✅ REPRISE DE LA SESSION ${session.id} pour l'utilisateur ${userId}`
         );
@@ -108,14 +106,12 @@ const startGame = async (req, res) => {
       );
     }
 
-    const result = await pool.query(
-      `INSERT INTO game_sessions (user_id, story_mongo_id, current_page_mongo_id, is_preview) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING id, user_id, story_mongo_id, current_page_mongo_id, is_completed, started_at`,
-      [userId, storyMongoId, story.startPageId.toString(), false]
-    );
-
-    session = result.rows[0];
+    session = await gameSessionService.create({
+      userId,
+      storyMongoId,
+      currentPageMongoId: story.startPageId.toString(),
+      isPreview: false,
+    });
 
     story.stats.totalPlays += 1;
     await story.save();
@@ -152,20 +148,15 @@ const makeChoice = async (req, res) => {
 
     logger.info(`Choix ${choiceId} fait dans la session ${sessionId}`);
 
-    const sessionResult = await pool.query(
-      "SELECT * FROM game_sessions WHERE id = $1",
-      [sessionId]
-    );
+    const session = await gameSessionService.findById(sessionId);
 
-    if (sessionResult.rows.length === 0) {
+    if (!session) {
       logger.warn(`Session introuvable : ${sessionId}`);
       return res.status(404).json({
         success: false,
         error: "Session de jeu introuvable.",
       });
     }
-
-    const session = sessionResult.rows[0];
 
     // Vérifier que la session n'est pas terminée
     if (session.is_completed) {
@@ -211,10 +202,10 @@ const makeChoice = async (req, res) => {
       });
     }
 
-    await pool.query(
-      `INSERT INTO session_paths (session_id, page_mongo_id, choice_mongo_id, step_order)
-       VALUES ($1, $2, $3, (SELECT COALESCE(MAX(step_order), 0) + 1 FROM session_paths WHERE session_id = $1))`,
-      [sessionId, currentPage._id.toString(), choiceId]
+    await sessionPathService.addStep(
+      sessionId,
+      currentPage._id.toString(),
+      choiceId
     );
 
     let isCompleted = targetPage.isEnd;
@@ -224,22 +215,11 @@ const makeChoice = async (req, res) => {
     logger.info(`📄 Nouvelle page: ${targetPage._id.toString()}`);
     logger.info(`✅ Terminée: ${isCompleted}`);
 
-    await pool.query(
-      `UPDATE game_sessions 
-       SET current_page_mongo_id = $1, 
-           is_completed = $2, 
-           end_page_mongo_id = $3,
-           completed_at = $4,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $5`,
-      [
-        targetPage._id.toString(),
-        isCompleted,
-        endPageMongoId,
-        isCompleted ? new Date() : null,
-        sessionId,
-      ]
-    );
+    await gameSessionService.updateCurrentPage(sessionId, {
+      currentPageMongoId: targetPage._id.toString(),
+      isCompleted,
+      endPageMongoId,
+    });
 
     logger.info(`✅ Session ${sessionId} mise à jour avec succès`);
 
@@ -252,15 +232,10 @@ const makeChoice = async (req, res) => {
       });
 
       if (req.user) {
-        await pool.query(
-          `INSERT INTO unlocked_endings (user_id, story_mongo_id, page_mongo_id)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (user_id, story_mongo_id, page_mongo_id) DO NOTHING`,
-          [
-            req.user.id,
-            targetPage.storyId.toString(),
-            targetPage._id.toString(),
-          ]
+        await unlockedEndingService.unlock(
+          req.user.id,
+          targetPage.storyId.toString(),
+          targetPage._id.toString()
         );
       }
     }
@@ -293,12 +268,9 @@ const getSessionHistory = async (req, res) => {
 
     logger.info(`Récupération de l'historique de la session ${sessionId}`);
 
-    const sessionResult = await pool.query(
-      "SELECT * FROM game_sessions WHERE id = $1",
-      [sessionId]
-    );
+    const session = await gameSessionService.findById(sessionId);
 
-    if (sessionResult.rows.length === 0) {
+    if (!session) {
       logger.warn(`Session introuvable : ${sessionId}`);
       return res.status(404).json({
         success: false,
@@ -306,17 +278,7 @@ const getSessionHistory = async (req, res) => {
       });
     }
 
-    const session = sessionResult.rows[0];
-
-    const pathResult = await pool.query(
-      `SELECT page_mongo_id, choice_mongo_id, step_order, created_at 
-       FROM session_paths 
-       WHERE session_id = $1 
-       ORDER BY step_order ASC`,
-      [sessionId]
-    );
-
-    const path = pathResult.rows;
+    const path = await sessionPathService.getBySession(sessionId);
 
     logger.info(`Historique récupéré : ${path.length} étapes`);
 
@@ -347,15 +309,7 @@ const getMySessions = async (req, res) => {
 
     logger.info(`Récupération des sessions de l'utilisateur ${userId}`);
 
-    const result = await pool.query(
-      `SELECT id, story_mongo_id, current_page_mongo_id, is_completed, started_at, completed_at 
-       FROM game_sessions 
-       WHERE user_id = $1 
-       ORDER BY started_at DESC`,
-      [userId]
-    );
-
-    const sessions = result.rows;
+    const sessions = await gameSessionService.findByUser(userId);
 
     logger.info(
       `${sessions.length} sessions trouvées pour l'utilisateur ${userId}`
@@ -385,40 +339,25 @@ const getPathStats = async (req, res) => {
 
     logger.info(`Récupération des stats de parcours pour session ${sessionId}`);
 
-    const sessionResult = await pool.query(
-      "SELECT * FROM game_sessions WHERE id = $1",
-      [sessionId]
-    );
+    const session = await gameSessionService.findById(sessionId);
 
-    if (sessionResult.rows.length === 0) {
+    if (!session) {
       return res.status(404).json({
         success: false,
         error: "Session introuvable.",
       });
     }
 
-    const session = sessionResult.rows[0];
+    const currentPath = await sessionPathService.getBySession(sessionId);
+    const currentPathPageIds = currentPath.map((r) => r.page_mongo_id);
 
-    const pathResult = await pool.query(
-      `SELECT page_mongo_id FROM session_paths 
-       WHERE session_id = $1 
-       ORDER BY step_order ASC`,
-      [sessionId]
+    const allPaths = await sessionPathService.getAllPathsByStory(
+      session.story_mongo_id
     );
 
-    const currentPath = pathResult.rows.map((r) => r.page_mongo_id);
-
-    const allPathsResult = await pool.query(
-      `SELECT sp.session_id, sp.page_mongo_id, sp.step_order
-       FROM session_paths sp
-       JOIN game_sessions gs ON sp.session_id = gs.id
-       WHERE gs.story_mongo_id = $1
-       ORDER BY sp.session_id, sp.step_order`,
-      [session.story_mongo_id]
-    );
-
+    // Organiser par session
     const sessionPaths = {};
-    allPathsResult.rows.forEach((row) => {
+    allPaths.forEach((row) => {
       if (!sessionPaths[row.session_id]) {
         sessionPaths[row.session_id] = [];
       }
@@ -429,11 +368,11 @@ const getPathStats = async (req, res) => {
     let similarSessions = 0;
 
     Object.values(sessionPaths).forEach((path) => {
-      const minLength = Math.min(currentPath.length, path.length);
+      const minLength = Math.min(currentPathPageIds.length, path.length);
       let matches = 0;
 
       for (let i = 0; i < minLength; i++) {
-        if (currentPath[i] === path[i]) {
+        if (currentPathPageIds[i] === path[i]) {
           matches++;
         }
       }
@@ -450,28 +389,15 @@ const getPathStats = async (req, res) => {
 
     let endStats = null;
     if (session.is_completed && session.end_page_mongo_id) {
-      const endStatsResult = await pool.query(
-        `SELECT COUNT(*) as count
-         FROM game_sessions
-         WHERE story_mongo_id = $1 AND end_page_mongo_id = $2 AND is_completed = true`,
-        [session.story_mongo_id, session.end_page_mongo_id]
+      const stats = await unlockedEndingService.getEndingStats(
+        session.story_mongo_id,
+        session.end_page_mongo_id
       );
-
-      const totalCompleted = await pool.query(
-        `SELECT COUNT(*) as count
-         FROM game_sessions
-         WHERE story_mongo_id = $1 AND is_completed = true`,
-        [session.story_mongo_id]
-      );
-
-      const endCount = parseInt(endStatsResult.rows[0].count);
-      const totalCount = parseInt(totalCompleted.rows[0].count);
 
       endStats = {
         endPageId: session.end_page_mongo_id,
-        timesReached: endCount,
-        percentage:
-          totalCount > 0 ? Math.round((endCount / totalCount) * 100) : 0,
+        timesReached: stats.timesReached,
+        percentage: stats.percentage,
       };
     }
 
@@ -503,15 +429,10 @@ const getUnlockedEndings = async (req, res) => {
       `Récupération des fins débloquées pour l'histoire ${storyId} par ${userId}`
     );
 
-    const result = await pool.query(
-      `SELECT page_mongo_id, unlocked_at 
-       FROM unlocked_endings 
-       WHERE user_id = $1 AND story_mongo_id = $2
-       ORDER BY unlocked_at DESC`,
-      [userId, storyId]
+    const unlockedEndings = await unlockedEndingService.getByUserAndStory(
+      userId,
+      storyId
     );
-
-    const unlockedEndings = result.rows;
 
     const pageIds = unlockedEndings.map((e) => e.page_mongo_id);
     const pages = await Page.find({
@@ -559,25 +480,12 @@ const getMyActivities = async (req, res) => {
     logger.info(`Récupération des activités de l'utilisateur ${userId}`);
 
     // Récupérer toutes les sessions de l'utilisateur
-    const sessionsResult = await pool.query(
-      `SELECT 
-        gs.story_mongo_id,
-        gs.is_completed,
-        MAX(gs.id) as last_session_id,
-        MAX(gs.updated_at) as last_updated,
-        COUNT(DISTINCT gs.id) as total_sessions,
-        COUNT(DISTINCT CASE WHEN gs.is_completed = true THEN gs.end_page_mongo_id END) as unique_endings
-       FROM game_sessions gs
-       WHERE gs.user_id = $1
-       GROUP BY gs.story_mongo_id, gs.is_completed
-       ORDER BY MAX(gs.updated_at) DESC`,
-      [userId]
-    );
+    const sessionsData = await gameSessionService.getUserActivities(userId);
 
     // Organiser les données par histoire
     const storiesMap = {};
 
-    for (const row of sessionsResult.rows) {
+    for (const row of sessionsData) {
       const storyId = row.story_mongo_id;
 
       if (!storiesMap[storyId]) {
@@ -654,20 +562,15 @@ const navigateToPage = async (req, res) => {
       `Navigation directe vers la page ${targetPageId} dans la session ${sessionId}`
     );
 
-    const sessionResult = await pool.query(
-      "SELECT * FROM game_sessions WHERE id = $1",
-      [sessionId]
-    );
+    const session = await gameSessionService.findById(sessionId);
 
-    if (sessionResult.rows.length === 0) {
+    if (!session) {
       logger.warn(`Session introuvable : ${sessionId}`);
       return res.status(404).json({
         success: false,
         error: "Session de jeu introuvable.",
       });
     }
-
-    const session = sessionResult.rows[0];
 
     if (session.is_completed) {
       logger.warn(
@@ -703,22 +606,11 @@ const navigateToPage = async (req, res) => {
     let isCompleted = targetPage.isEnd;
     let endPageMongoId = isCompleted ? targetPage._id.toString() : null;
 
-    await pool.query(
-      `UPDATE game_sessions 
-       SET current_page_mongo_id = $1, 
-           is_completed = $2, 
-           end_page_mongo_id = $3,
-           completed_at = $4,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $5`,
-      [
-        targetPage._id.toString(),
-        isCompleted,
-        endPageMongoId,
-        isCompleted ? new Date() : null,
-        sessionId,
-      ]
-    );
+    await gameSessionService.updateCurrentPage(sessionId, {
+      currentPageMongoId: targetPage._id.toString(),
+      isCompleted,
+      endPageMongoId,
+    });
 
     targetPage.stats.timesReached += 1;
     if (targetPage.isEnd) {
@@ -729,15 +621,10 @@ const navigateToPage = async (req, res) => {
       });
 
       if (req.user) {
-        await pool.query(
-          `INSERT INTO unlocked_endings (user_id, story_mongo_id, page_mongo_id)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (user_id, story_mongo_id, page_mongo_id) DO NOTHING`,
-          [
-            req.user.id,
-            targetPage.storyId.toString(),
-            targetPage._id.toString(),
-          ]
+        await unlockedEndingService.unlock(
+          req.user.id,
+          targetPage.storyId.toString(),
+          targetPage._id.toString()
         );
       }
     }

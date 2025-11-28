@@ -1,4 +1,4 @@
-const { pool } = require("../config/postgresql");
+const reportService = require("../services/reportService");
 const Story = require("../models/mongodb/Story");
 const logger = require("../utils/logger");
 
@@ -26,14 +26,7 @@ const createReport = async (req, res) => {
     }
 
     // Créer le signalement
-    const result = await pool.query(
-      `INSERT INTO reports (user_id, story_mongo_id, reason, status) 
-       VALUES ($1, $2, $3, 'pending') 
-       RETURNING id, user_id, story_mongo_id, reason, status, created_at`,
-      [userId, storyMongoId, reason]
-    );
-
-    const report = result.rows[0];
+    const report = await reportService.create({ userId, storyMongoId, reason });
 
     logger.info(`Signalement créé avec succès : ${report.id}`);
 
@@ -59,15 +52,7 @@ const getMyReports = async (req, res) => {
 
     logger.info(`Récupération des signalements de l'utilisateur ${userId}`);
 
-    const result = await pool.query(
-      `SELECT id, story_mongo_id, reason, status, created_at
-       FROM reports
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
-      [userId]
-    );
-
-    const reports = result.rows;
+    const reports = await reportService.findByUser(userId);
 
     logger.info(
       `${reports.length} signalements trouvés pour l'utilisateur ${userId}`
@@ -92,4 +77,3 @@ module.exports = {
   createReport,
   getMyReports,
 };
-

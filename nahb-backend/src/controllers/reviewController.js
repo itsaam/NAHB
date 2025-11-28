@@ -1,4 +1,4 @@
-const { pool } = require("../config/postgresql");
+const reviewService = require("../services/reviewService");
 const Story = require("../models/mongodb/Story");
 const logger = require("../utils/logger");
 
@@ -22,52 +22,44 @@ const createReview = async (req, res) => {
       });
     }
 
-    const existingReview = await pool.query(
-      "SELECT id FROM reviews WHERE user_id = $1 AND story_mongo_id = $2",
-      [userId, storyMongoId]
+    const existingReview = await reviewService.findByUserAndStory(
+      userId,
+      storyMongoId
     );
 
-    let reviewResult;
+    let review;
 
-    if (existingReview.rows.length > 0) {
-      reviewResult = await pool.query(
-        `UPDATE reviews 
-         SET rating = $1, comment = $2, created_at = CURRENT_TIMESTAMP 
-         WHERE user_id = $3 AND story_mongo_id = $4 
-         RETURNING *`,
-        [rating, comment, userId, storyMongoId]
-      );
-      logger.info(`Review mise à jour : ${reviewResult.rows[0].id}`);
+    if (existingReview) {
+      review = await reviewService.update(existingReview.id, {
+        rating,
+        comment,
+      });
+      logger.info(`Review mise à jour : ${review.id}`);
     } else {
-      reviewResult = await pool.query(
-        `INSERT INTO reviews (user_id, story_mongo_id, rating, comment) 
-         VALUES ($1, $2, $3, $4) 
-         RETURNING *`,
-        [userId, storyMongoId, rating, comment]
-      );
-      logger.info(`Nouvelle review créée : ${reviewResult.rows[0].id}`);
+      review = await reviewService.create({
+        userId,
+        storyMongoId,
+        rating,
+        comment,
+      });
+      logger.info(`Nouvelle review créée : ${review.id}`);
     }
 
-    const ratingsResult = await pool.query(
-      "SELECT AVG(rating)::numeric(3,2) as avg_rating, COUNT(*) as count FROM reviews WHERE story_mongo_id = $1",
-      [storyMongoId]
-    );
-
-    const avgRating = parseFloat(ratingsResult.rows[0].avg_rating) || 0;
-    const ratingCount = parseInt(ratingsResult.rows[0].count) || 0;
+    // Recalculer les stats de rating
+    const ratingStats = await reviewService.getStoryRatingStats(storyMongoId);
 
     await Story.findByIdAndUpdate(storyMongoId, {
-      "rating.average": avgRating,
-      "rating.count": ratingCount,
+      "rating.average": ratingStats.average,
+      "rating.count": ratingStats.count,
     });
 
     logger.info(
-      `Statistiques de rating mises à jour pour l'histoire ${storyMongoId}: ${avgRating}/5 (${ratingCount} avis)`
+      `Statistiques de rating mises à jour pour l'histoire ${storyMongoId}: ${ratingStats.average}/5 (${ratingStats.count} avis)`
     );
 
     return res.status(200).json({
       success: true,
-      data: reviewResult.rows[0],
+      data: review,
     });
   } catch (err) {
     logger.error(`Erreur lors de la création de la review : ${err.message}`);
@@ -87,23 +79,15 @@ const getStoryReviews = async (req, res) => {
 
     logger.info(`Récupération des reviews pour l'histoire ${storyId}`);
 
-    const result = await pool.query(
-      `SELECT r.id, r.rating, r.comment, r.created_at, 
-              u.id as user_id, u.pseudo 
-       FROM reviews r 
-       JOIN users u ON r.user_id = u.id 
-       WHERE r.story_mongo_id = $1 
-       ORDER BY r.created_at DESC`,
-      [storyId]
-    );
+    const reviews = await reviewService.findByStory(storyId);
 
     logger.info(
-      `${result.rows.length} reviews trouvées pour l'histoire ${storyId}`
+      `${reviews.length} reviews trouvées pour l'histoire ${storyId}`
     );
 
     return res.status(200).json({
       success: true,
-      data: result.rows,
+      data: reviews,
     });
   } catch (err) {
     logger.error(`Erreur lors de la récupération des reviews : ${err.message}`);
@@ -123,21 +107,15 @@ const getMyReviews = async (req, res) => {
 
     logger.info(`Récupération des reviews de l'utilisateur ${userId}`);
 
-    const result = await pool.query(
-      `SELECT r.id, r.story_mongo_id, r.rating, r.comment, r.created_at 
-       FROM reviews r 
-       WHERE r.user_id = $1 
-       ORDER BY r.created_at DESC`,
-      [userId]
-    );
+    const reviews = await reviewService.findByUser(userId);
 
     logger.info(
-      `${result.rows.length} reviews trouvées pour l'utilisateur ${userId}`
+      `${reviews.length} reviews trouvées pour l'utilisateur ${userId}`
     );
 
     return res.status(200).json({
       success: true,
-      data: result.rows,
+      data: reviews,
     });
   } catch (err) {
     logger.error(`Erreur lors de la récupération des reviews : ${err.message}`);
@@ -158,19 +136,14 @@ const deleteReview = async (req, res) => {
 
     logger.info(`Suppression de la review ${id} par l'utilisateur ${userId}`);
 
-    const reviewResult = await pool.query(
-      "SELECT * FROM reviews WHERE id = $1",
-      [id]
-    );
+    const review = await reviewService.findById(id);
 
-    if (reviewResult.rows.length === 0) {
+    if (!review) {
       return res.status(404).json({
         success: false,
         error: "Review introuvable.",
       });
     }
-
-    const review = reviewResult.rows[0];
 
     if (review.user_id !== userId && req.user.role !== "admin") {
       return res.status(403).json({
@@ -179,19 +152,16 @@ const deleteReview = async (req, res) => {
       });
     }
 
-    await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
+    await reviewService.deleteById(id);
 
-    const ratingsResult = await pool.query(
-      "SELECT AVG(rating)::numeric(3,2) as avg_rating, COUNT(*) as count FROM reviews WHERE story_mongo_id = $1",
-      [review.story_mongo_id]
+    // Recalculer les stats de rating
+    const ratingStats = await reviewService.getStoryRatingStats(
+      review.story_mongo_id
     );
 
-    const avgRating = parseFloat(ratingsResult.rows[0].avg_rating) || 0;
-    const ratingCount = parseInt(ratingsResult.rows[0].count) || 0;
-
     await Story.findByIdAndUpdate(review.story_mongo_id, {
-      "rating.average": avgRating,
-      "rating.count": ratingCount,
+      "rating.average": ratingStats.average,
+      "rating.count": ratingStats.count,
     });
 
     logger.info(`Review ${id} supprimée avec succès`);
