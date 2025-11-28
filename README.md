@@ -4,7 +4,7 @@
 
 
 **MODIF APRÈS présentation 9H15**
-(./nahb-backend/refactorModif.md)
+Voir le détail ici : [Refactor/Modifs](./nahb-backend/refactorModif.md)
 
 **Plateforme web fullstack de création et de lecture d'histoires interactives de type "livre dont vous êtes le héros"**
 
